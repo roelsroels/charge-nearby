@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Find available public EV charging stations near a Dutch postcode.">
+  <meta name="theme-color" content="#0e3d37">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Charge Nearby">
+  <meta property="og:description" content="Public charging around you.">
+  <meta property="og:image" content="https://roelsroels.github.io/charge-nearby/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Charge Nearby">
+  <meta name="twitter:description" content="Public charging around you.">
+  <meta name="twitter:image" content="https://roelsroels.github.io/charge-nearby/og.png">
+  <title>Charge Nearby · public charging around you</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#results">Skip to results</a>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Charge Nearby home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 2v4M11 2v4M5 6h8v3a4 4 0 0 1-4 4v0a4 4 0 0 1-4-4V6Z"/>
+          <path d="M9 13v3a4 4 0 0 0 4 4h2"/><path d="m17 15-2 3h4l-2 3"/>
+        </svg>
+      </span>
+      <span>Charge Nearby</span>
+    </a>
+    <div class="header-meta">
+      <span class="live-pill"><i aria-hidden="true"></i> Demonstration data</span>
+      <span class="language-button" aria-label="Interface language: English">EN</span>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">PUBLIC CHARGING · AMSTERDAM</p>
+        <h1 id="page-title">A free charger,<br><em>close by.</em></h1>
+      </div>
+      <p class="intro-copy">Enter a postcode and see which public charging points are available right now—sorted by distance, not guesswork.</p>
+    </section>
+
+    <section class="finder" aria-label="Charging station finder">
+      <form class="search-panel" id="charger-search">
+        <div class="search-heading">
+          <span class="step-number">01</span>
+          <div>
+            <h2>Where should we look?</h2>
+            <p>Use a full postcode for a more precise centre point.</p>
+          </div>
+        </div>
+
+        <label class="field-label" for="postcode">Postcode</label>
+        <div class="postcode-row">
+          <div class="postcode-input-wrap">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input id="postcode" name="postcode" autocomplete="postal-code" inputmode="text" maxlength="7" value="1012 JS" aria-describedby="postcode-help">
+          </div>
+          <button class="search-button" type="submit">
+            Find chargers
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <p class="input-help" id="postcode-help">The mock-up validates Dutch postcodes and shows a central Amsterdam demo set.</p>
+
+        <fieldset class="radius-fieldset">
+          <legend>Search radius</legend>
+          <div class="radius-options">
+            <label><input type="radio" name="radius" value="250"><span>250 m</span></label>
+            <label><input type="radio" name="radius" value="500" checked><span>500 m</span></label>
+            <label><input type="radio" name="radius" value="1000"><span>1 km</span></label>
+            <label><input type="radio" name="radius" value="2000"><span>2 km</span></label>
+          </div>
+        </fieldset>
+
+        <div class="status-key" aria-label="Availability legend">
+          <span><i class="available-dot"></i> Available</span>
+          <span><i class="busy-dot"></i> Occupied</span>
+          <span><i class="unknown-dot"></i> Unknown</span>
+        </div>
+      </form>
+
+      <div class="map-panel">
+        <div id="map" aria-label="Map showing public charging stations around postcode 1012 JS"></div>
+        <div class="map-summary" aria-live="polite">
+          <div>
+            <span class="summary-label">Within <strong id="radius-summary">500 m</strong></span>
+            <strong class="summary-number"><span id="available-count">7</span> available</strong>
+          </div>
+          <button class="map-list-toggle" type="button" aria-pressed="false">
+            <span class="map-icon" aria-hidden="true">⌖</span>
+            <span class="toggle-text">Show list</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="results-section" id="results" aria-labelledby="results-title">
+      <div class="results-header">
+        <div>
+          <p class="eyebrow">NEAREST FIRST</p>
+          <h2 id="results-title">Available around <span id="postcode-result">1012 JS</span></h2>
+        </div>
+        <div class="results-total"><strong id="location-count">4</strong><span>locations found</span></div>
+      </div>
+      <div class="station-grid" id="station-list"></div>
+    </section>
+
+    <section class="data-note" aria-labelledby="data-note-title">
+      <p class="eyebrow">ABOUT THE DATA</p>
+      <div>
+        <h2 id="data-note-title">Live enough to be useful.<br>Honest enough to say when it isn’t.</h2>
+        <p>This mock-up uses realistic demonstration data. A production version can use the Dutch NDW/DOT-NL feed for public location and connector availability, with PDOK for postcode coordinates.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div><strong>Charge Nearby</strong><p>A static-site concept for public charging in Amsterdam.</p></div>
+    <p>Data concept: NDW / DOT-NL · Map © OpenStreetMap contributors</p>
+  </footer>
+</body>
+</html>
