@@ -2,11 +2,11 @@
 
 [![Validate static site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
 
-A dependency-free static mock-up for finding available public EV charging stations around a Dutch postcode. All publicly served files live in `html/`.
+A dependency-free static site for finding available public EV charging stations around an Amsterdam postcode. All publicly served files live in `html/`.
 
 Live site: **https://roelsroels.github.io/charge-nearby/**
 
-The current version uses realistic demonstration data around central Amsterdam. It is designed so the mock data can later be replaced by postcode geocoding through PDOK and live public charging data through NDW/DOT-NL.
+Postcodes are geocoded in the browser with PDOK’s public Location API. Charger locations and connector availability come from NDW/DOT-NL. Because the NDW endpoint does not currently allow cross-origin browser requests, GitHub Pages rebuilds a same-origin Amsterdam snapshot every 15 minutes.
 
 ## Run locally
 
@@ -31,7 +31,7 @@ node --test tests/smoke.mjs
 
 ## Data note
 
-The visible locations and availability are demonstration values and must not be used for navigation decisions. The production data concept is documented in `docs/DATA.md`.
+Availability is operator-reported connector status and can lag or be incorrect. It does not guarantee that the corresponding parking bay is empty or accessible. The data flow is documented in `docs/DATA.md`.
 
 ## License
 
