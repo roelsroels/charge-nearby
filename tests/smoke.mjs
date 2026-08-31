@@ -18,6 +18,7 @@ test("page exposes the charging search", () => {
   assert.match(html, /styles\.css\?v=1\.0\.0/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.doesNotMatch(html, /A free charger/);
+  assert.match(html, /Release v1\.0\.3/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
   assert.equal(fs.existsSync(new URL("../html/og.png", import.meta.url)), true);
