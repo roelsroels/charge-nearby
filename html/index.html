@@ -8,11 +8,11 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Charge Nearby">
   <meta property="og:description" content="Public charging around you.">
-  <meta property="og:image" content="https://roelsroels.github.io/charge-nearby/og.png">
+  <meta property="og:image" content="og.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Charge Nearby">
   <meta name="twitter:description" content="Public charging around you.">
-  <meta name="twitter:image" content="https://roelsroels.github.io/charge-nearby/og.png">
+  <meta name="twitter:image" content="og.png">
   <title>Charge Nearby · public charging around you</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
@@ -35,7 +35,7 @@
       <span>Charge Nearby</span>
     </a>
     <div class="header-meta">
-      <span class="live-pill"><i aria-hidden="true"></i> Loading NDW data…</span>
+      <span class="live-pill"><i aria-hidden="true"></i> Connecting to EnBW…</span>
       <span class="language-button" aria-label="Interface language: English">EN</span>
     </div>
   </header>
@@ -63,7 +63,7 @@
         <div class="postcode-row">
           <div class="postcode-input-wrap">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-            <input id="postcode" name="postcode" autocomplete="postal-code" inputmode="text" maxlength="7" value="1012 JS" aria-describedby="postcode-help">
+            <input id="postcode" name="postcode" autocomplete="postal-code" inputmode="text" maxlength="7" value="1095 DE" aria-describedby="postcode-help">
           </div>
           <button class="search-button" type="submit">
             <span class="button-label">Find chargers</span>
@@ -90,7 +90,7 @@
       </form>
 
       <div class="map-panel">
-        <div id="map" aria-label="Map showing public charging stations around postcode 1012 JS"></div>
+        <div id="map" aria-label="Map showing public charging stations around postcode 1095 DE"></div>
         <div class="map-summary" aria-live="polite">
           <div>
             <span class="summary-label">Within <strong id="radius-summary">500 m</strong></span>
@@ -108,7 +108,7 @@
       <div class="results-header">
         <div>
           <p class="eyebrow">NEAREST FIRST</p>
-          <h2 id="results-title">Available around <span id="postcode-result">1012 JS</span></h2>
+          <h2 id="results-title">Available around <span id="postcode-result">1095 DE</span></h2>
         </div>
         <div class="results-total"><strong id="location-count">0</strong><span>locations found</span></div>
       </div>
@@ -119,14 +119,14 @@
       <p class="eyebrow">ABOUT THE DATA</p>
       <div>
         <h2 id="data-note-title">Live enough to be useful.<br>Honest enough to say when it isn’t.</h2>
-        <p>Postcodes are located through the public PDOK address register. Charger locations and connector availability come from NDW/DOT-NL and are refreshed automatically for Amsterdam. Availability is the operator-reported connector status—not a guarantee that a parking bay is accessible.</p>
+        <p>Postcodes are located through the public PDOK address register. Charger locations and connector availability are requested from EnBW mobility+ through this private server and briefly cached. Availability is the roaming-network status—not a guarantee that a parking bay is accessible.</p>
       </div>
     </section>
   </main>
 
   <footer>
     <div><strong>Charge Nearby</strong><p>Public charging around Amsterdam, searched by postcode.</p></div>
-    <p>Postcodes: PDOK · Chargers: NDW / DOT-NL · Map © OpenStreetMap contributors</p>
+    <p>Postcodes: PDOK · Chargers: EnBW mobility+ · Map © OpenStreetMap contributors · Unofficial private tool</p>
   </footer>
 </body>
 </html>

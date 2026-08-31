@@ -1,0 +1,12 @@
+services:
+  charge-nearby:
+    build: .
+    restart: unless-stopped
+    environment:
+      ENBW_API_KEY: ${ENBW_API_KEY:?Set ENBW_API_KEY in .env}
+      HOST: 0.0.0.0
+      PORT: 8080
+      CACHE_TTL_MS: 60000
+      STALE_TTL_MS: 900000
+    ports:
+      - "8080:8080"

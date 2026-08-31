@@ -1,60 +1,104 @@
 # Charge Nearby
 
-[![Validate static site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
+[![Validate private site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
 
-A dependency-free static site for finding available public EV charging stations around an Amsterdam postcode. All publicly served files live in `html/`.
+A small private-network website for finding currently available public EV charging stations around an Amsterdam postcode.
 
-Live site: **https://roelsroels.github.io/charge-nearby/**
+The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
-> [!NOTE]
-> Development is paused. The prototype remains online, but its charger coverage should not be treated as complete. See the known data limitation below.
+> [!IMPORTANT]
+> This is an unofficial private tool. It is not affiliated with or supported by EnBW. The EnBW web-map endpoint and browser key can change without notice.
 
-Postcodes are geocoded in the browser with PDOK’s public Location API. Charger locations and connector availability come from NDW/DOT-NL. Because the NDW endpoint does not currently allow cross-origin browser requests, GitHub Pages rebuilds a same-origin Amsterdam snapshot every 15 minutes.
+## Quick start with Docker
 
-## Run locally
+Requirements: Docker with Compose.
 
 ```sh
-python3 -m http.server 8080 --directory html
+cp .env.example .env
 ```
 
-Then open `http://localhost:8080`.
+Put the current EnBW browser key in `.env`, then start the service:
 
-## Hosting
+```sh
+docker compose up -d --build
+```
 
-Serve the `html/` directory from any static host or web server. No build step, database, package manager, cookies, analytics, or server-side runtime is required.
+Open `http://localhost:8080`. From another device on the same network, use `http://<server-lan-ip>:8080`.
 
-An example nginx virtual host is included in `nginx/charge-nearby.conf.example`. If the site later moves to a custom domain, update the absolute `og.png` social-preview URLs in `html/index.html`.
+The `.env` file is ignored by Git. Do not commit the real key.
+
+## Run directly with Node.js
+
+Requirements: Node.js 22 or newer.
+
+```sh
+ENBW_API_KEY="your-current-key" HOST=0.0.0.0 PORT=8080 npm start
+```
+
+Use `HOST=127.0.0.1` when access should be limited to the same computer.
+
+## Obtain or replace the key
+
+The EnBW map delivers a shared Azure API Management key to browsers:
+
+1. Open the [EnBW charging map](https://www.enbw.com/elektromobilitaet/produkte/mobilityplus-app/ladestation-finden/map).
+2. Open the browser developer tools and select the Network panel.
+3. Select a charging station.
+4. Find a request to `api.emp.emob-enbw.com`.
+5. Copy the `Ocp-Apim-Subscription-Key` request header into `.env` as `ENBW_API_KEY`.
+
+Restart the service after changing `.env`:
+
+```sh
+docker compose up -d --force-recreate
+```
+
+The health endpoint reports whether a key is configured without exposing it:
+
+```sh
+curl http://localhost:8080/api/health
+```
+
+## Reverse proxy
+
+The Node service must handle both the website and `/api/chargers`. Do not serve `html/` by itself. An nginx reverse-proxy example is available in `nginx/charge-nearby.conf.example`.
+
+Keep this deployment behind a private LAN, VPN, firewall, or authenticated reverse proxy. The application itself does not implement user authentication.
+
+## Data behavior
+
+- Searches are restricted to Amsterdam and its immediate surroundings.
+- Supported radii are 250 m, 500 m, 1 km and 2 km.
+- Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
+- Dense searches can require many EnBW requests because the upstream API returns grouped markers. The service expands those groups with a concurrency and request limit.
+- An available connector does not guarantee an empty or accessible parking space.
+- Operators can be named differently across roaming providers. For example, the station Electroverse labels Equans at Tweede Ceramstraat 27 is labelled GreenFlux by EnBW.
+
+The complete data flow is documented in `docs/DATA.md`.
+
+## Why the original NDW source was replaced
+
+The earlier static prototype used an Amsterdam-wide NDW/DOT-NL snapshot. That feed was reliable enough technically, but its coverage was incomplete compared with commercial roaming apps. Around `1095 DE`, NDW returned 17 locations within 500 metres and omitted numerous nearby Equans locations—including `Tweede Ceramstraat 27, 1095 BM`—that were visible in Electroverse.
+
+This was an upstream coverage gap rather than a postcode, radius, or rendering defect. The EnBW-backed implementation now returns that station and substantially more nearby locations. The historical finding is retained here because NDW should not be reintroduced as the sole data source without first rechecking its operator coverage.
 
 ## Checks
 
 ```sh
-node --check html/app.js
-node --test tests/smoke.mjs
+npm run check
+npm test
 ```
 
-## Data note
+The automated tests use simulated EnBW responses and do not need a real key. A live verification can be performed after starting the service and searching for `1095 DE`.
 
-Availability is operator-reported connector status and can lag or be incorrect. It does not guarantee that the corresponding parking bay is empty or accessible. The data flow is documented in `docs/DATA.md`.
+## Project layout
 
-### Known limitation: incomplete charger coverage
-
-The NDW/DOT-NL feed used by this prototype does not contain every public charging location shown by commercial roaming apps. This is an upstream data-coverage limitation, not a radius-filtering or map-rendering issue in the site.
-
-The issue was verified around postcode `1095 DE`:
-
-- NDW returned 17 raw locations within 500 metres, and the site retained all 17 after processing.
-- All 17 locations were operated by TotalEnergies; numerous nearby Equans locations visible in Electroverse were absent from the raw NDW response.
-- As a concrete example, the Equans station at `Tweede Ceramstraat 27, 1095 BM` was not present in NDW. The nearest NDW location was a TotalEnergies station at `88 Soembawastraat`, approximately 35 metres away.
-
-DOT-NL depends on data supplied by charge-point operators and owners, so its coverage can be incomplete. Electroverse has access to a broader commercial roaming and partner network and can therefore show locations that are missing from the public feed. The 15-minute snapshot interval may make availability slightly stale, but it does not explain permanently missing locations. Postcode-centre and radius differences can affect stations near the edge of a search, but do not explain the nearby missing Equans stations in this example.
-
-If the project is revived, possible approaches are:
-
-- integrate a licensed roaming or operator feed with more complete coverage;
-- supplement static locations with OpenStreetMap, accepting that it does not provide reliable live connector availability;
-- report missing locations to NDW or the relevant charge-point operator; and
-- add a prominent in-product coverage disclaimer rather than presenting the results as exhaustive.
+- `server.mjs` — local HTTP server, cache and API route
+- `lib/enbw.mjs` — EnBW client, cluster expansion and data normalisation
+- `html/` — browser frontend
+- `compose.yaml` and `Dockerfile` — private-network container deployment
+- `tests/` — unit, server and frontend smoke tests
 
 ## License
 
-MIT
+The Charge Nearby source is MIT licensed. EnBW, mobility+ and their data are not covered by this repository’s licence.

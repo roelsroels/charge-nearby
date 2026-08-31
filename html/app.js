@@ -3,7 +3,7 @@
 
   const DEFAULT_CENTRE = [52.37276, 4.89362];
   const PDOK_SEARCH_URL = "https://api.pdok.nl/kadaster/location-api/v1/search";
-  const CHARGER_DATA_URL = "data/chargers.json";
+  const CHARGER_API_URL = "api/chargers";
 
   let map;
   let stationLayer;
@@ -13,7 +13,7 @@
   let activeRadius = 500;
   let stations = [];
   let dataMeta = null;
-  let dataPromise;
+  let searchRequestId = 0;
   const markers = new Map();
 
   const byId = (id) => document.getElementById(id);
@@ -52,8 +52,8 @@
     const ageMinutes = dataMeta?.generatedAt
       ? (Date.now() - new Date(dataMeta.generatedAt).getTime()) / 60000
       : Infinity;
-    badge.dataset.state = ageMinutes > 60 ? "stale" : "current";
-    badge.lastChild.textContent = ` NDW · ${dataAgeText()}`;
+    badge.dataset.state = dataMeta?.cache === "stale" || ageMinutes > 15 ? "stale" : "current";
+    badge.lastChild.textContent = ` EnBW · ${dataAgeText()}`;
   }
 
   function availabilityState(station) {
@@ -97,7 +97,9 @@
     const power = document.createElement("span");
     power.textContent = station.powerKw ? `⚡ up to ${Math.round(station.powerKw)} kW` : "Power unknown";
     const connector = document.createElement("span");
-    connector.textContent = station.connectors?.includes("IEC_62196_T2") ? "Type 2" : "Public EVSE";
+    if (station.connectors?.includes("TYPE_2")) connector.textContent = "Type 2";
+    else if (station.connectors?.some((type) => type.includes("CCS"))) connector.textContent = "CCS";
+    else connector.textContent = station.connectorNames?.[0] || "Public EVSE";
     facts.append(power, connector);
     const directions = document.createElement("a");
     directions.className = "directions-link";
@@ -188,18 +190,14 @@
     const loading = state === "loading";
     button.disabled = loading;
     input.disabled = loading;
+    document.querySelectorAll('input[name="radius"]').forEach((radiusInput) => {
+      radiusInput.disabled = loading;
+    });
     label.textContent = loading ? "Finding chargers…" : "Find chargers";
     help.dataset.state = state;
     help.textContent = message;
     if (state === "error") input.setAttribute("aria-invalid", "true");
     else input.removeAttribute("aria-invalid");
-  }
-
-  function pointIsCovered([lat, lon]) {
-    const coverage = dataMeta?.coverage;
-    return coverage
-      && lon >= coverage.minLon && lon <= coverage.maxLon
-      && lat >= coverage.minLat && lat <= coverage.maxLat;
   }
 
   async function geocodePostcode(postcode) {
@@ -231,11 +229,15 @@
     };
   }
 
-  async function loadChargerData() {
-    const response = await fetch(`${CHARGER_DATA_URL}?v=${Date.now()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Charging snapshot returned ${response.status}`);
-    const payload = await response.json();
-    if (!Array.isArray(payload.stations) || !payload.coverage) throw new Error("Invalid charging snapshot");
+  async function loadChargerData([lat, lon], radius) {
+    const url = new URL(CHARGER_API_URL, window.location.href);
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lon));
+    url.searchParams.set("radius", String(radius));
+    const response = await fetch(url, { cache: "no-store", headers: { Accept: "application/json" } });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `Charging service returned ${response.status}`);
+    if (!Array.isArray(payload.stations)) throw new Error("Invalid charging response");
     dataMeta = payload;
     stations = payload.stations
       .filter((station) => Array.isArray(station.position) && station.position.length === 2)
@@ -258,25 +260,31 @@
       return;
     }
 
-    setSearchState("loading", "Looking up the postcode and current public charging data…");
+    const requestId = ++searchRequestId;
+    setSearchState("loading", "Looking up the postcode…");
     try {
-      const [, location] = await Promise.all([dataPromise, geocodePostcode(postcode)]);
+      const location = await geocodePostcode(postcode);
       if (!location) throw new Error("postcode-not-found");
-      if (!pointIsCovered(location.centre)) throw new Error("outside-coverage");
+      setSearchState("loading", "Resolving current EnBW charging availability…");
+      await loadChargerData(location.centre, activeRadius);
+      if (requestId !== searchRequestId) return;
       searchCentre = location.centre;
       const formatted = formatPostcode(postcode);
       input.value = formatted;
       byId("postcode-result").textContent = formatted;
       byId("map").setAttribute("aria-label", `Map showing public charging stations around postcode ${formatted}`);
-      setSearchState("success", `Centred on ${formatted} · NDW public charging data ${dataAgeText()}.`);
+      const cacheNote = dataMeta.cache === "stale" ? " · showing cached data" : "";
+      setSearchState("success", `Centred on ${formatted} · EnBW charging data ${dataAgeText()}${cacheNote}.`);
       render();
     } catch (error) {
       if (error.message === "postcode-not-found") {
         setSearchState("error", "That postcode could not be found in the Dutch address register.");
-      } else if (error.message === "outside-coverage") {
-        setSearchState("error", "This first release currently covers Amsterdam and its immediate surroundings.");
+      } else if (/limited to Amsterdam/i.test(error.message)) {
+        setSearchState("error", "This private deployment currently covers Amsterdam and its immediate surroundings.");
+      } else if (/too many grouped stations|smaller radius/i.test(error.message)) {
+        setSearchState("error", "This area is too dense for that radius. Try a smaller search radius.");
       } else {
-        setSearchState("error", "Public charging data is temporarily unavailable. Please try again shortly.");
+        setSearchState("error", `Charging data is temporarily unavailable: ${error.message}`);
       }
       input.focus();
     }
@@ -303,7 +311,7 @@
   document.querySelectorAll('input[name="radius"]').forEach((input) => {
     input.addEventListener("change", () => {
       activeRadius = Number(input.value);
-      render();
+      searchPostcode(byId("postcode").value);
     });
   });
 
@@ -322,7 +330,6 @@
 
   window.addEventListener("load", () => {
     initialiseMap();
-    dataPromise = loadChargerData();
     searchPostcode(byId("postcode").value);
   }, { once: true });
 })();
