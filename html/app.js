@@ -4,6 +4,7 @@
   const DEFAULT_CENTRE = [52.37276, 4.89362];
   const PDOK_SEARCH_URL = "https://api.pdok.nl/kadaster/location-api/v1/search";
   const CHARGER_API_URL = "api/chargers";
+  const FAVORITES_STORAGE_KEY = "charge-nearby:favorites:v1";
 
   let map;
   let stationLayer;
@@ -15,9 +16,27 @@
   let dataMeta = null;
   let searchRequestId = 0;
   const markers = new Map();
+  const favorites = loadFavoriteIds();
 
   const byId = (id) => document.getElementById(id);
   const formatDistance = (metres) => metres < 1000 ? `${Math.round(metres)} m` : `${(metres / 1000).toFixed(1)} km`;
+
+  function loadFavoriteIds() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || "[]");
+      return new Set(Array.isArray(stored) ? stored.filter((id) => typeof id === "string") : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  function saveFavoriteIds() {
+    try {
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...favorites]));
+    } catch {
+      // Favorites still work for this page view when storage is unavailable.
+    }
+  }
 
   function normalisePostcode(value) {
     return String(value || "").toUpperCase().replace(/\s+/g, "");
@@ -67,7 +86,7 @@
 
   function stationCard(station) {
     const article = document.createElement("article");
-    article.className = "station-card";
+    article.className = `station-card${favorites.has(station.id) ? " is-favorite" : ""}`;
     article.tabIndex = 0;
     article.dataset.stationId = station.id;
 
@@ -80,7 +99,15 @@
     const state = availabilityState(station);
     availability.className = `availability${state.className}`;
     availability.textContent = state.text;
-    top.append(distance, availability);
+    const controls = document.createElement("div");
+    controls.className = "station-card-controls";
+    const favorite = document.createElement("button");
+    favorite.className = "favorite-button";
+    favorite.type = "button";
+    setFavoriteButtonState(favorite, station);
+    favorite.addEventListener("click", () => toggleFavorite(station));
+    controls.append(availability, favorite);
+    top.append(distance, controls);
 
     const body = document.createElement("div");
     const title = document.createElement("h3");
@@ -117,6 +144,30 @@
     return article;
   }
 
+  function setFavoriteButtonState(button, station) {
+    const selected = favorites.has(station.id);
+    const action = selected ? "Remove" : "Add";
+    button.setAttribute("aria-pressed", String(selected));
+    button.setAttribute("aria-label", `${action} ${station.address || "this charging location"} ${selected ? "from" : "to"} favorites`);
+    button.title = `${action} ${selected ? "from" : "to"} favorites`;
+    button.textContent = selected ? "♥" : "♡";
+  }
+
+  function toggleFavorite(station) {
+    if (favorites.has(station.id)) favorites.delete(station.id);
+    else favorites.add(station.id);
+    saveFavoriteIds();
+
+    document.querySelectorAll(".station-card").forEach((card) => {
+      if (card.dataset.stationId !== station.id) return;
+      card.classList.toggle("is-favorite", favorites.has(station.id));
+      const button = card.querySelector(".favorite-button");
+      if (button) setFavoriteButtonState(button, station);
+    });
+    const marker = markers.get(station.id);
+    if (marker) marker.setIcon(pinIcon(station));
+  }
+
   function highlightStation(id) {
     document.querySelectorAll(".station-card").forEach((card) => card.classList.toggle("is-highlighted", card.dataset.stationId === id));
     const marker = markers.get(id);
@@ -129,8 +180,10 @@
 
   function pinIcon(station) {
     const state = !station.known ? " unknown" : station.available === 0 ? " busy" : "";
+    const favorite = favorites.has(station.id) ? " favorite" : "";
     const label = station.known && station.total ? `${station.available}/${station.total}` : "?";
-    return L.divIcon({ className: `charger-pin${state}`, html: `<span>${label}</span>` });
+    const favoriteBadge = favorite ? '<i aria-hidden="true">♥</i>' : "";
+    return L.divIcon({ className: `charger-pin${state}${favorite}`, html: `<span>${label}</span>${favoriteBadge}` });
   }
 
   function visibleStations() {
@@ -172,7 +225,7 @@
     visible.forEach((station) => {
       const marker = L.marker(station.position, {
         icon: pinIcon(station),
-        title: `${station.address}: ${availabilityState(station).text}`
+        title: `${favorites.has(station.id) ? "Favorite · " : ""}${station.address}: ${availabilityState(station).text}`
       }).bindPopup(createPopup(station)).addTo(stationLayer);
       markers.set(station.id, marker);
     });
