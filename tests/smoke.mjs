@@ -15,6 +15,7 @@ test("page exposes the charging search", () => {
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
   assert.match(html, /app\.js\?v=0\.2\.1/);
+  assert.match(html, /styles\.css\?v=0\.2\.2/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
   assert.equal(fs.existsSync(new URL("../html/og.png", import.meta.url)), true);
@@ -31,4 +32,5 @@ test("postcode and private EnBW API paths stay present", () => {
 test("responsive and reduced-motion rules are present", () => {
   assert.match(css, /@media \(max-width: 720px\)/);
   assert.match(css, /prefers-reduced-motion/);
+  assert.doesNotMatch(css, /\.intro \{[^}]*min-height:\s*430px/);
 });
