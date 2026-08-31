@@ -15,6 +15,8 @@
   let activeRadius = Number(document.querySelector('input[name="radius"]:checked')?.value) || 250;
   let stations = [];
   let dataMeta = null;
+  let activePostcode = null;
+  let dataAgeTimer = null;
   let searchRequestId = 0;
   const markers = new Map();
   const favorites = loadFavoriteIds();
@@ -77,11 +79,14 @@
 
   function dataAgeText() {
     if (!dataMeta?.generatedAt) return "update time unavailable";
-    const ageMinutes = Math.max(0, Math.round((Date.now() - new Date(dataMeta.generatedAt).getTime()) / 60000));
-    if (ageMinutes < 2) return "updated just now";
-    if (ageMinutes < 60) return `updated ${ageMinutes} min ago`;
-    const hours = Math.round(ageMinutes / 60);
-    return `updated ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+    const ageSeconds = Math.max(0, Math.floor((Date.now() - new Date(dataMeta.generatedAt).getTime()) / 1000));
+    if (ageSeconds < 60) return "updated just now";
+    const minutes = Math.floor(ageSeconds / 60);
+    if (minutes < 60) return `updated ${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `updated ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+    const days = Math.floor(hours / 24);
+    return `updated ${days} ${days === 1 ? "day" : "days"} ago`;
   }
 
   function updateDataBadge() {
@@ -91,6 +96,19 @@
       : Infinity;
     badge.dataset.state = dataMeta?.cache === "stale" || ageMinutes > 15 ? "stale" : "current";
     badge.lastChild.textContent = ` EnBW · ${dataAgeText()}`;
+  }
+
+  function updateDataFreshnessLabels() {
+    if (!dataMeta?.generatedAt) return;
+    updateDataBadge();
+    const help = byId("postcode-help");
+    if (!activePostcode || help.dataset.state !== "success") return;
+    const cacheNote = dataMeta?.cache === "stale" ? " · showing cached data" : "";
+    help.textContent = `Centred on ${activePostcode} · EnBW charging data ${dataAgeText()}${cacheNote}.`;
+  }
+
+  function startDataAgeClock() {
+    if (dataAgeTimer === null) dataAgeTimer = window.setInterval(updateDataFreshnessLabels, 10000);
   }
 
   function availabilityState(station) {
@@ -375,10 +393,12 @@
       const formatted = formatPostcode(postcode);
       input.value = formatted;
       saveLastPostcode(formatted);
+      activePostcode = formatted;
       byId("postcode-result").textContent = formatted;
       byId("map").setAttribute("aria-label", `Map showing public charging stations around postcode ${formatted}`);
-      const cacheNote = dataMeta.cache === "stale" ? " · showing cached data" : "";
-      setSearchState("success", `Centred on ${formatted} · EnBW charging data ${dataAgeText()}${cacheNote}.`);
+      setSearchState("success", "");
+      updateDataFreshnessLabels();
+      startDataAgeClock();
       render();
     } catch (error) {
       if (error.message === "postcode-not-found") {
@@ -431,6 +451,11 @@
     document.querySelector(".toggle-text").textContent = pressed ? "Show list" : "Back to map";
     (pressed ? document.querySelector(".map-panel") : byId("results")).scrollIntoView({ behavior: "smooth", block: "start" });
   });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) updateDataFreshnessLabels();
+  });
+  window.addEventListener("focus", updateDataFreshnessLabels);
 
   window.addEventListener("load", () => {
     const savedPostcode = loadLastPostcode();

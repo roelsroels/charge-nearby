@@ -4,7 +4,7 @@
 
 A small private-network website for finding currently available public EV charging stations around an Amsterdam postcode.
 
-Current release: **v1.0.1**
+Current release: **v1.0.2**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
@@ -80,6 +80,7 @@ Keep this deployment behind a private LAN, VPN, firewall, or authenticated rever
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
 - Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.
 - The last successfully searched postcode is stored in the current browser and restored on the next visit.
+- Data-age labels continue updating while the page is open and refresh immediately when an idle tab becomes active again.
 - Dense searches can require many EnBW requests because the upstream API returns grouped markers. The service expands those groups with a concurrency and request limit.
 - An available connector does not guarantee an empty or accessible parking space.
 - Operators can be named differently across roaming providers.
