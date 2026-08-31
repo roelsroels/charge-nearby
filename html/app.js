@@ -5,6 +5,7 @@
   const PDOK_SEARCH_URL = "https://api.pdok.nl/kadaster/location-api/v1/search";
   const CHARGER_API_URL = "api/chargers";
   const FAVORITES_STORAGE_KEY = "charge-nearby:favorites:v1";
+  const LAST_POSTCODE_STORAGE_KEY = "charge-nearby:last-postcode:v1";
 
   let map;
   let stationLayer;
@@ -45,6 +46,23 @@
   function formatPostcode(value) {
     const postcode = normalisePostcode(value);
     return `${postcode.slice(0, 4)} ${postcode.slice(4)}`;
+  }
+
+  function loadLastPostcode() {
+    try {
+      const postcode = normalisePostcode(localStorage.getItem(LAST_POSTCODE_STORAGE_KEY));
+      return /^\d{4}[A-Z]{2}$/.test(postcode) ? formatPostcode(postcode) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveLastPostcode(postcode) {
+    try {
+      localStorage.setItem(LAST_POSTCODE_STORAGE_KEY, formatPostcode(postcode));
+    } catch {
+      // The search still works when browser storage is unavailable.
+    }
   }
 
   function haversineMetres([lat1, lon1], [lat2, lon2]) {
@@ -356,6 +374,7 @@
       searchCentre = location.centre;
       const formatted = formatPostcode(postcode);
       input.value = formatted;
+      saveLastPostcode(formatted);
       byId("postcode-result").textContent = formatted;
       byId("map").setAttribute("aria-label", `Map showing public charging stations around postcode ${formatted}`);
       const cacheNote = dataMeta.cache === "stale" ? " · showing cached data" : "";
@@ -414,6 +433,8 @@
   });
 
   window.addEventListener("load", () => {
+    const savedPostcode = loadLastPostcode();
+    if (savedPostcode) byId("postcode").value = savedPostcode;
     initialiseMap();
     searchPostcode(byId("postcode").value);
   }, { once: true });

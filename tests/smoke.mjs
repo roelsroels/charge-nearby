@@ -14,7 +14,7 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.0\.0/);
+  assert.match(html, /app\.js\?v=1\.0\.1/);
   assert.match(html, /styles\.css\?v=1\.0\.0/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.doesNotMatch(html, /A free charger/);
@@ -45,6 +45,13 @@ test("favorites are persistent and visually distinct", () => {
   assert.match(css, /\.charger-pin\.favorite/);
   assert.match(css, /\.popup-favorite-button/);
   assert.match(html, /Favorites appear first/);
+});
+
+test("the last successful postcode is restored", () => {
+  assert.match(js, /charge-nearby:last-postcode:v1/);
+  assert.match(js, /saveLastPostcode\(formatted\)/);
+  assert.match(js, /loadLastPostcode\(\)/);
+  assert.match(js, /byId\("postcode"\)\.value = savedPostcode/);
 });
 
 test("responsive and reduced-motion rules are present", () => {
