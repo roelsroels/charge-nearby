@@ -14,8 +14,8 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=0\.3\.1/);
-  assert.match(html, /styles\.css\?v=0\.3\.2/);
+  assert.match(html, /app\.js\?v=1\.0\.0/);
+  assert.match(html, /styles\.css\?v=1\.0\.0/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.doesNotMatch(html, /A free charger/);
   assert.match(html, /id="station-list"/);
