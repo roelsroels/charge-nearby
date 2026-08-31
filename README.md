@@ -76,7 +76,7 @@ Keep this deployment behind a private LAN, VPN, firewall, or authenticated rever
 - Searches are restricted to Amsterdam and its immediate surroundings.
 - Supported radii are 250 m, 500 m, 1 km and 2 km.
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
-- Favorite stations are stored only in the current browser and highlighted in both the results and map.
+- Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.
 - Dense searches can require many EnBW requests because the upstream API returns grouped markers. The service expands those groups with a concurrency and request limit.
 - An available connector does not guarantee an empty or accessible parking space.
 - Operators can be named differently across roaming providers.

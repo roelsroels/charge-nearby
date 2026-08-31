@@ -147,10 +147,13 @@
   function setFavoriteButtonState(button, station) {
     const selected = favorites.has(station.id);
     const action = selected ? "Remove" : "Add";
+    button.dataset.favoriteStationId = station.id;
     button.setAttribute("aria-pressed", String(selected));
     button.setAttribute("aria-label", `${action} ${station.address || "this charging location"} ${selected ? "from" : "to"} favorites`);
     button.title = `${action} ${selected ? "from" : "to"} favorites`;
-    button.textContent = selected ? "♥" : "♡";
+    button.textContent = button.classList.contains("popup-favorite-button")
+      ? selected ? "♥ Favorite" : "♡ Add favorite"
+      : selected ? "♥" : "♡";
   }
 
   function toggleFavorite(station) {
@@ -161,11 +164,26 @@
     document.querySelectorAll(".station-card").forEach((card) => {
       if (card.dataset.stationId !== station.id) return;
       card.classList.toggle("is-favorite", favorites.has(station.id));
-      const button = card.querySelector(".favorite-button");
-      if (button) setFavoriteButtonState(button, station);
     });
+    document.querySelectorAll(".favorite-button").forEach((button) => {
+      if (button.dataset.favoriteStationId === station.id) setFavoriteButtonState(button, station);
+    });
+    sortStationCards();
     const marker = markers.get(station.id);
-    if (marker) marker.setIcon(pinIcon(station));
+    if (marker) {
+      marker.setIcon(pinIcon(station));
+      marker.options.title = markerTitle(station);
+      marker.getElement()?.setAttribute("title", marker.options.title);
+    }
+  }
+
+  function sortStationCards() {
+    const list = byId("station-list");
+    const cards = new Map([...list.querySelectorAll(".station-card")].map((card) => [card.dataset.stationId, card]));
+    visibleStations().forEach((station) => {
+      const card = cards.get(station.id);
+      if (card) list.append(card);
+    });
   }
 
   function highlightStation(id) {
@@ -190,7 +208,13 @@
     return stations
       .map((station) => ({ ...station, distance: haversineMetres(searchCentre, station.position) }))
       .filter((station) => station.distance <= activeRadius)
-      .sort((a, b) => a.distance - b.distance || b.available - a.available);
+      .sort((a, b) => Number(favorites.has(b.id)) - Number(favorites.has(a.id))
+        || a.distance - b.distance
+        || b.available - a.available);
+  }
+
+  function markerTitle(station) {
+    return `${favorites.has(station.id) ? "Favorite · " : ""}${station.address}: ${availabilityState(station).text}`;
   }
 
   function createPopup(station) {
@@ -199,7 +223,15 @@
     title.textContent = station.address || "Public charging location";
     const status = document.createElement("div");
     status.textContent = availabilityState(station).text;
-    content.append(title, status);
+    const favorite = document.createElement("button");
+    favorite.className = "favorite-button popup-favorite-button";
+    favorite.type = "button";
+    setFavoriteButtonState(favorite, station);
+    favorite.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleFavorite(station);
+    });
+    content.append(title, status, favorite);
     return content;
   }
 
@@ -225,7 +257,7 @@
     visible.forEach((station) => {
       const marker = L.marker(station.position, {
         icon: pinIcon(station),
-        title: `${favorites.has(station.id) ? "Favorite · " : ""}${station.address}: ${availabilityState(station).text}`
+        title: markerTitle(station)
       }).bindPopup(createPopup(station)).addTo(stationLayer);
       markers.set(station.id, marker);
     });

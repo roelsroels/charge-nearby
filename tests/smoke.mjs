@@ -14,8 +14,8 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=0\.3\.0/);
-  assert.match(html, /styles\.css\?v=0\.3\.0/);
+  assert.match(html, /app\.js\?v=0\.3\.1/);
+  assert.match(html, /styles\.css\?v=0\.3\.1/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
   assert.equal(fs.existsSync(new URL("../html/og.png", import.meta.url)), true);
@@ -36,9 +36,13 @@ test("favorites are persistent and visually distinct", () => {
   assert.match(js, /localStorage\.setItem/);
   assert.match(js, /aria-pressed/);
   assert.match(js, /toggleFavorite/);
+  assert.match(js, /sortStationCards/);
+  assert.match(js, /Number\(favorites\.has\(b\.id\)\) - Number\(favorites\.has\(a\.id\)\)/);
+  assert.match(js, /popup-favorite-button/);
   assert.match(css, /\.station-card\.is-favorite/);
   assert.match(css, /\.charger-pin\.favorite/);
-  assert.match(html, /Select the heart to highlight chargers/);
+  assert.match(css, /\.popup-favorite-button/);
+  assert.match(html, /Favorites appear first/);
 });
 
 test("responsive and reduced-motion rules are present", () => {

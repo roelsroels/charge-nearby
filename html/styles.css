@@ -110,6 +110,8 @@ main { overflow: hidden; }
 .favorite-button:hover { color: var(--coral); border-color: var(--coral); transform: scale(1.06); }
 .favorite-button[aria-pressed="true"] { color: white; border-color: var(--coral); background: var(--coral); box-shadow: 0 0 0 3px rgba(240,123,90,.14); }
 .favorite-button:focus-visible { outline: 3px solid rgba(29,107,94,.22); outline-offset: 2px; }
+.leaflet-popup-content .popup-favorite-button { width: 100%; height: 32px; margin-top: 10px; padding: 0 11px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; font-weight: 760; }
+.leaflet-popup-content .popup-favorite-button:hover { transform: none; }
 .distance { font: 750 10px var(--mono); letter-spacing: .06em; }
 .availability { padding: 7px 10px; border-radius: 999px; background: var(--lime-soft); font-size: 10px; font-weight: 780; white-space: nowrap; }
 .availability.limited { color: #7b3526; background: #fce1d8; }
