@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { boundsForRadius, fetchStationsAround, haversineMetres } from "../lib/enbw.mjs";
 
-const centre = [52.36299993891113, 4.942437485316742];
+const centre = [52.37312, 4.89319];
 
 function station(id, overrides = {}) {
   return {
@@ -52,7 +52,7 @@ test("grouped markers are expanded, deduplicated and filtered by exact radius", 
     const payload = isChild
       ? [
         station(1),
-        station(2, { shortAddress: "Tweede Ceramstraat 27", lat: centre[0] - 0.0001 }),
+        station(2, { shortAddress: "Central Amsterdam example", lat: centre[0] - 0.0001 }),
         station(3, { lat: centre[0] + 0.02 }),
         repeatedGroup,
       ]
@@ -74,7 +74,7 @@ test("grouped markers are expanded, deduplicated and filtered by exact radius", 
   assert.equal(result.requestCount, 2);
   assert.equal(result.reusedClusterReferences, 1);
   assert.deepEqual(result.stations.map((item) => item.id), ["enbw-1", "enbw-2"]);
-  assert.equal(result.stations[1].address, "Tweede Ceramstraat 27");
+  assert.equal(result.stations[1].address, "Central Amsterdam example");
   assert.deepEqual(result.stations[0].connectors, ["TYPE_2"]);
   assert.equal(requests[0].options.headers.Origin, "https://www.enbw.com");
   assert.equal(requests[0].options.headers.Referer, "https://www.enbw.com/");

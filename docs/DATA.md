@@ -22,6 +22,6 @@ Charge Nearby now uses an on-demand local service because the EnBW endpoint reje
 
 The EnBW endpoint is an undocumented web-map backend, not a stable developer API. The hostname, key, required headers, response structure and grouping behavior can change. A rejected key produces a service error until `ENBW_API_KEY` is replaced and the process is restarted.
 
-The previous NDW/DOT-NL snapshot was retired because it omitted many stations around `1095 DE`, including the Equans location at Tweede Ceramstraat 27 that was visible in Electroverse. That comparison established that the missing locations were absent upstream, rather than removed by this application's radius filtering. NDW should therefore not be used again as the only location source without a new coverage audit.
+The previous NDW/DOT-NL snapshot was retired after an Amsterdam comparison found multiple stations in a commercial roaming app that were absent from the raw NDW response. That comparison established that the missing locations were absent upstream, rather than removed by this application's radius filtering. NDW should therefore not be used again as the only location source without a new coverage audit.
 
 Important product wording: an available connector is operator/roaming-network status, not a guaranteed empty or accessible parking bay. Tariffs can differ by roaming provider, and operator names may differ between apps.

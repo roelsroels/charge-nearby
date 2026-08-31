@@ -6,6 +6,12 @@ A small private-network website for finding currently available public EV chargi
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
+## Screenshots
+
+![Charge Nearby search and map for postcode 1012 JS](docs/screenshots/charge-nearby-1012-js-overview.jpg)
+
+![Charge Nearby charger results for postcode 1012 JS](docs/screenshots/charge-nearby-1012-js-results.jpg)
+
 > [!IMPORTANT]
 > This is an unofficial private tool. It is not affiliated with or supported by EnBW. The EnBW web-map endpoint and browser key can change without notice.
 
@@ -72,15 +78,15 @@ Keep this deployment behind a private LAN, VPN, firewall, or authenticated rever
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
 - Dense searches can require many EnBW requests because the upstream API returns grouped markers. The service expands those groups with a concurrency and request limit.
 - An available connector does not guarantee an empty or accessible parking space.
-- Operators can be named differently across roaming providers. For example, the station Electroverse labels Equans at Tweede Ceramstraat 27 is labelled GreenFlux by EnBW.
+- Operators can be named differently across roaming providers.
 
 The complete data flow is documented in `docs/DATA.md`.
 
 ## Why the original NDW source was replaced
 
-The earlier static prototype used an Amsterdam-wide NDW/DOT-NL snapshot. That feed was reliable enough technically, but its coverage was incomplete compared with commercial roaming apps. Around `1095 DE`, NDW returned 17 locations within 500 metres and omitted numerous nearby Equans locations—including `Tweede Ceramstraat 27, 1095 BM`—that were visible in Electroverse.
+The earlier static prototype used an Amsterdam-wide NDW/DOT-NL snapshot. That feed was reliable enough technically, but a side-by-side Amsterdam coverage audit found multiple operator locations in commercial roaming apps that were absent from the raw NDW response.
 
-This was an upstream coverage gap rather than a postcode, radius, or rendering defect. The EnBW-backed implementation now returns that station and substantially more nearby locations. The historical finding is retained here because NDW should not be reintroduced as the sole data source without first rechecking its operator coverage.
+This was an upstream coverage gap rather than a postcode, radius, or rendering defect. The EnBW-backed implementation returned substantially more nearby locations. The historical finding is retained here because NDW should not be reintroduced as the sole data source without first rechecking its operator coverage.
 
 ## Checks
 
@@ -89,7 +95,7 @@ npm run check
 npm test
 ```
 
-The automated tests use simulated EnBW responses and do not need a real key. A live verification can be performed after starting the service and searching for `1095 DE`.
+The automated tests use simulated EnBW responses and do not need a real key. A live verification can be performed after starting the service and searching for `1012 JS`.
 
 ## Project layout
 

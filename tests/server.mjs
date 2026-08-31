@@ -5,11 +5,11 @@ import { createChargeNearbyServer } from "../server.mjs";
 
 const stationPayload = [{
   grouped: false,
-  stationId: 2271775,
-  shortAddress: "Tweede Ceramstraat 27, 1095BM Amsterdam, NL",
-  operator: "GreenFlux Assets B.V. - (Niederlande)",
-  lat: 52.362844,
-  lon: 4.943148,
+  stationId: 123456,
+  shortAddress: "Central Amsterdam example, 1012 JS Amsterdam, NL",
+  operator: "Example operator",
+  lat: 52.37312,
+  lon: 4.89319,
   numberOfChargePoints: 2,
   availableChargePoints: 1,
   unknownStateChargePoints: 0,
@@ -49,12 +49,12 @@ test("charger endpoint caches successful EnBW searches", async () => {
     return new Response(JSON.stringify(stationPayload), { status: 200 });
   };
   await withServer({ apiKey: "test-key", fetchImpl, cacheTtlMs: 60000 }, async (baseUrl) => {
-    const query = "/api/chargers?lat=52.3629999389&lon=4.9424374853&radius=500";
+    const query = "/api/chargers?lat=52.37312&lon=4.89319&radius=500";
     const first = await fetch(`${baseUrl}${query}`);
     const firstPayload = await first.json();
     assert.equal(first.status, 200);
     assert.equal(firstPayload.cache, "miss");
-    assert.equal(firstPayload.stations[0].id, "enbw-2271775");
+    assert.equal(firstPayload.stations[0].id, "enbw-123456");
 
     const second = await fetch(`${baseUrl}${query}`);
     const secondPayload = await second.json();

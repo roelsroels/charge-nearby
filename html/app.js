@@ -255,7 +255,7 @@
     const input = byId("postcode");
     const postcode = normalisePostcode(rawPostcode);
     if (!/^\d{4}[A-Z]{2}$/.test(postcode)) {
-      setSearchState("error", "Enter a Dutch postcode such as 1095 DE.");
+      setSearchState("error", "Enter a Dutch postcode such as 1012 JS.");
       input.focus();
       return;
     }
