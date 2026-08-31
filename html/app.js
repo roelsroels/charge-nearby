@@ -10,7 +10,7 @@
   let radiusLayer;
   let centreMarker;
   let searchCentre = DEFAULT_CENTRE;
-  let activeRadius = 500;
+  let activeRadius = 250;
   let stations = [];
   let dataMeta = null;
   let searchRequestId = 0;
