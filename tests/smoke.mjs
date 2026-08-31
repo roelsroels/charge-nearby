@@ -15,7 +15,9 @@ test("page exposes the charging search", () => {
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
   assert.match(html, /app\.js\?v=0\.3\.1/);
-  assert.match(html, /styles\.css\?v=0\.3\.1/);
+  assert.match(html, /styles\.css\?v=0\.3\.2/);
+  assert.match(html, /Available charger, <em>closeby<\/em>/);
+  assert.doesNotMatch(html, /A free charger/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
   assert.equal(fs.existsSync(new URL("../html/og.png", import.meta.url)), true);
@@ -49,4 +51,6 @@ test("responsive and reduced-motion rules are present", () => {
   assert.match(css, /@media \(max-width: 720px\)/);
   assert.match(css, /prefers-reduced-motion/);
   assert.doesNotMatch(css, /\.intro \{[^}]*min-height:\s*430px/);
+  assert.match(css, /\.intro h1 \{[^}]*white-space:\s*nowrap/);
+  assert.match(css, /\.finder \{[^}]*min-height:\s*540px/);
 });
