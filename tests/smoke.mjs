@@ -11,6 +11,10 @@ test("page exposes the charging search", () => {
   assert.match(html, /autocomplete="postal-code"/);
   assert.match(html, /name="radius" value="250"/);
   assert.match(html, /name="radius" value="2000"/);
+  assert.match(html, /name="radius" value="250" checked/);
+  assert.doesNotMatch(html, /name="radius" value="500" checked/);
+  assert.match(html, /id="radius-summary">250 m</);
+  assert.match(html, /app\.js\?v=0\.2\.1/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
   assert.equal(fs.existsSync(new URL("../html/og.png", import.meta.url)), true);
