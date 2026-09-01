@@ -2,7 +2,7 @@
 
 [![Validate private site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
 
-A small private-network website for finding currently available public EV charging stations around an Amsterdam postcode.
+A small website for finding currently available public EV charging stations around a (NL-)postcode.
 
 Current release: **v1.0.4**
 
