@@ -132,6 +132,8 @@ main { overflow: hidden; }
 .data-note .eyebrow { color: var(--lime); }
 footer { width: min(1180px, calc(100% - 48px)); min-height: 110px; margin: 0 auto; padding: 25px 0 38px; border-top: 1px solid var(--border); display: flex; align-items: start; justify-content: space-between; gap: 40px; color: var(--ink-soft); font-size: 10px; line-height: 1.5; }
 footer strong { color: var(--ink); font-size: 12px; } footer p { margin: 4px 0 0; max-width: 420px; }
+footer a { color: var(--ink); font-weight: 700; text-underline-offset: 3px; }
+footer a:hover { color: var(--green-2); }
 
 @media (max-width: 900px) {
   .intro { gap: 24px; }

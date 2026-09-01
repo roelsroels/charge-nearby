@@ -15,10 +15,11 @@ test("page exposes the charging search", () => {
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
   assert.match(html, /app\.js\?v=1\.0\.2/);
-  assert.match(html, /styles\.css\?v=1\.0\.0/);
+  assert.match(html, /styles\.css\?v=1\.0\.4/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /Release v1\.0\.3/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.0\.4<\/a>/);
+  assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
   assert.equal(fs.existsSync(new URL("../html/og.png", import.meta.url)), true);

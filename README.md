@@ -4,7 +4,7 @@
 
 A small private-network website for finding currently available public EV charging stations around an Amsterdam postcode.
 
-Current release: **v1.0.3**
+Current release: **v1.0.4**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
