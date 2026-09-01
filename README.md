@@ -2,9 +2,9 @@
 
 [![Validate private site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
 
-A small website for finding currently available public EV charging stations around an Amsterdam-zone postcode.
+A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
-Current release: **v1.0.4**
+Current release: **v1.0.5**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
@@ -75,7 +75,7 @@ Keep this deployment behind a private LAN, VPN, firewall, or authenticated rever
 
 ## Data behavior
 
-- Searches are restricted to Amsterdam and its immediate surroundings.
+- Searches are available throughout the European Netherlands. A geographic boundary prevents the private EnBW proxy from being used for arbitrary worldwide coordinates.
 - Supported radii are 250 m, 500 m, 1 km and 2 km.
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
 - Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.

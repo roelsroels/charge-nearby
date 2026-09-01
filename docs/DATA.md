@@ -4,7 +4,7 @@ Charge Nearby now uses an on-demand local service because the EnBW endpoint reje
 
 1. The browser converts the entered six-character postcode to an approximate centre through PDOK’s Location API.
 2. The browser requests `/api/chargers` from the same private Charge Nearby server with the centre and selected radius.
-3. The server validates the radius and limits coordinates to Amsterdam and its surroundings.
+3. The server validates the radius and limits coordinates to the European Netherlands.
 4. The server queries the EnBW mobility+ station endpoint with the configured `ENBW_API_KEY` and the headers expected by that endpoint.
 5. EnBW can return grouped map markers without station IDs. The server follows each group viewport until it has individual stations, deduplicates them by EnBW station ID, and applies an exact great-circle radius filter.
 6. Only fields needed by the interface are returned: station ID, coordinates, address, operator, connector types, power, total/available/unknown counts, opening, payment and accessibility indicators.

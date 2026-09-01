@@ -7,7 +7,7 @@ import { EnbwApiError, fetchStationsAround, haversineMetres } from "./lib/enbw.m
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultHtmlRoot = path.join(currentDirectory, "html");
-const AMSTERDAM_BOUNDS = Object.freeze({ minLat: 52.20, maxLat: 52.52, minLon: 4.60, maxLon: 5.12 });
+const NETHERLANDS_BOUNDS = Object.freeze({ minLat: 50.70, maxLat: 53.60, minLon: 3.20, maxLon: 7.30 });
 const ALLOWED_RADII = new Set([250, 500, 1000, 2000]);
 const MIME_TYPES = new Map([
   [".css", "text/css; charset=utf-8"],
@@ -32,9 +32,9 @@ function publicError(error) {
   return { status: 500, message: "Unexpected server error" };
 }
 
-function isWithinAmsterdam(lat, lon) {
-  return lat >= AMSTERDAM_BOUNDS.minLat && lat <= AMSTERDAM_BOUNDS.maxLat
-    && lon >= AMSTERDAM_BOUNDS.minLon && lon <= AMSTERDAM_BOUNDS.maxLon;
+function isWithinNetherlands(lat, lon) {
+  return lat >= NETHERLANDS_BOUNDS.minLat && lat <= NETHERLANDS_BOUNDS.maxLat
+    && lon >= NETHERLANDS_BOUNDS.minLon && lon <= NETHERLANDS_BOUNDS.maxLon;
 }
 
 function cacheKey(lat, lon, radius) {
@@ -126,8 +126,8 @@ export function createChargeNearbyServer({
       jsonResponse(response, 400, { error: "Provide valid lat, lon and radius (250, 500, 1000 or 2000)" });
       return;
     }
-    if (!isWithinAmsterdam(lat, lon)) {
-      jsonResponse(response, 400, { error: "This deployment is limited to Amsterdam and its surroundings" });
+    if (!isWithinNetherlands(lat, lon)) {
+      jsonResponse(response, 400, { error: "This deployment is limited to the European Netherlands" });
       return;
     }
 

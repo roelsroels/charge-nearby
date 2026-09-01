@@ -63,12 +63,22 @@ test("charger endpoint caches successful EnBW searches", async () => {
   });
 });
 
-test("charger endpoint validates radius and Amsterdam coverage", async () => {
-  await withServer({ apiKey: "test-key" }, async (baseUrl) => {
+test("charger endpoint validates radius and Netherlands coverage", async () => {
+  let upstreamRequests = 0;
+  const fetchImpl = async () => {
+    upstreamRequests += 1;
+    return new Response("[]", { status: 200 });
+  };
+  await withServer({ apiKey: "test-key", fetchImpl }, async (baseUrl) => {
     const invalidRadius = await fetch(`${baseUrl}/api/chargers?lat=52.36&lon=4.94&radius=750`);
     assert.equal(invalidRadius.status, 400);
-    const outside = await fetch(`${baseUrl}/api/chargers?lat=51.92&lon=4.48&radius=500`);
+
+    const rotterdam = await fetch(`${baseUrl}/api/chargers?lat=51.92&lon=4.48&radius=500`);
+    assert.equal(rotterdam.status, 200);
+
+    const outside = await fetch(`${baseUrl}/api/chargers?lat=48.86&lon=2.35&radius=500`);
     assert.equal(outside.status, 400);
+    assert.equal(upstreamRequests, 1);
   });
 });
 

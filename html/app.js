@@ -403,8 +403,8 @@
     } catch (error) {
       if (error.message === "postcode-not-found") {
         setSearchState("error", "That postcode could not be found in the Dutch address register.");
-      } else if (/limited to Amsterdam/i.test(error.message)) {
-        setSearchState("error", "This private deployment currently covers Amsterdam and its immediate surroundings.");
+      } else if (/limited to the European Netherlands/i.test(error.message)) {
+        setSearchState("error", "This private deployment currently covers the European Netherlands.");
       } else if (/too many grouped stations|smaller radius/i.test(error.message)) {
         setSearchState("error", "This area is too dense for that radius. Try a smaller search radius.");
       } else {

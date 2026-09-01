@@ -14,11 +14,12 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.0\.2/);
+  assert.match(html, /app\.js\?v=1\.0\.5/);
   assert.match(html, /styles\.css\?v=1\.0\.4/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
+  assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.0\.4<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.0\.5<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
@@ -30,6 +31,7 @@ test("page exposes the charging search", () => {
 test("postcode and private EnBW API paths stay present", () => {
   assert.match(js, /api\.pdok\.nl\/kadaster\/location-api/);
   assert.match(js, /api\/chargers/);
+  assert.match(js, /covers the European Netherlands/);
   assert.doesNotMatch(js, /data\/chargers\.json/);
   assert.doesNotMatch(html, /NDW\/DOT-NL/);
   assert.match(html, /EnBW mobility\+/);
