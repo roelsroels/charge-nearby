@@ -5,6 +5,7 @@ import test from "node:test";
 const html = fs.readFileSync(new URL("../html/index.html", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../html/styles.css", import.meta.url), "utf8");
 const js = fs.readFileSync(new URL("../html/app.js", import.meta.url), "utf8");
+const compose = fs.readFileSync(new URL("../compose.yaml", import.meta.url), "utf8");
 
 test("page exposes the charging search", () => {
   assert.match(html, /id="charger-search"/);
@@ -14,12 +15,12 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.0\.5/);
-  assert.match(html, /styles\.css\?v=1\.0\.4/);
+  assert.match(html, /app\.js\?v=1\.0\.6/);
+  assert.match(html, /styles\.css\?v=1\.0\.6/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.0\.5<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.0\.6<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
@@ -66,6 +67,17 @@ test("data freshness keeps updating in idle sessions", () => {
   assert.match(js, /setInterval\(updateDataFreshnessLabels, 10000\)/);
   assert.match(js, /visibilitychange/);
   assert.match(js, /window\.addEventListener\("focus", updateDataFreshnessLabels\)/);
+});
+
+test("stations omitted by a later response remain visibly unavailable", () => {
+  assert.match(html, /No current data/);
+  assert.match(js, /station\.current === false/);
+  assert.match(js, /is-unavailable/);
+  assert.match(js, /Number\(b\.current !== false\) - Number\(a\.current !== false\)/);
+  assert.match(css, /\.station-card\.is-unavailable/);
+  assert.match(css, /\.charger-pin\.unavailable/);
+  assert.match(compose, /STATION_HISTORY_FILE:\s*\/data\/stations\.json/);
+  assert.match(compose, /charge-nearby-data:\/data/);
 });
 
 test("responsive and reduced-motion rules are present", () => {

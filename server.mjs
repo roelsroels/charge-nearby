@@ -9,6 +9,8 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultHtmlRoot = path.join(currentDirectory, "html");
 const NETHERLANDS_BOUNDS = Object.freeze({ minLat: 50.70, maxLat: 53.60, minLon: 3.20, maxLon: 7.30 });
 const ALLOWED_RADII = new Set([250, 500, 1000, 2000]);
+const DEFAULT_HISTORY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_REMEMBERED_STATIONS = 5000;
 const MIME_TYPES = new Map([
   [".css", "text/css; charset=utf-8"],
   [".html", "text/html; charset=utf-8"],
@@ -45,15 +47,84 @@ function filterStations(stations, lat, lon, radius) {
   return stations.filter((station) => haversineMetres([lat, lon], station.position) <= radius);
 }
 
+function loadStationHistory(historyFile, historyTtlMs) {
+  if (!historyFile) return new Map();
+  try {
+    const cutoff = Date.now() - historyTtlMs;
+    const stored = JSON.parse(fs.readFileSync(historyFile, "utf8"));
+    if (!Array.isArray(stored)) return new Map();
+    return new Map(stored
+      .filter((station) => typeof station?.id === "string"
+        && Array.isArray(station.position)
+        && station.position.length === 2
+        && station.position.every(Number.isFinite)
+        && Number.isFinite(station.lastSeenAtMs)
+        && station.lastSeenAtMs >= cutoff)
+      .map((station) => [station.id, station]));
+  } catch (error) {
+    if (error.code !== "ENOENT") console.warn(`[charge-nearby] Could not load station history: ${error.message}`);
+    return new Map();
+  }
+}
+
+function persistStationHistory(historyFile, stationHistory) {
+  if (!historyFile) return;
+  try {
+    fs.mkdirSync(path.dirname(historyFile), { recursive: true });
+    const newest = [...stationHistory.values()]
+      .sort((a, b) => b.lastSeenAtMs - a.lastSeenAtMs)
+      .slice(0, MAX_REMEMBERED_STATIONS);
+    const temporaryFile = `${historyFile}.tmp-${process.pid}`;
+    fs.writeFileSync(temporaryFile, JSON.stringify(newest), { mode: 0o600 });
+    fs.renameSync(temporaryFile, historyFile);
+  } catch (error) {
+    console.warn(`[charge-nearby] Could not save station history: ${error.message}`);
+  }
+}
+
 export function createChargeNearbyServer({
   apiKey = process.env.ENBW_API_KEY,
   fetchImpl = fetch,
   htmlRoot = defaultHtmlRoot,
   cacheTtlMs = Number(process.env.CACHE_TTL_MS) || 60000,
   staleTtlMs = Number(process.env.STALE_TTL_MS) || 900000,
+  historyTtlMs = Number(process.env.STATION_HISTORY_TTL_MS) || DEFAULT_HISTORY_TTL_MS,
+  historyFile = process.env.STATION_HISTORY_FILE || null,
 } = {}) {
   const cache = new Map();
   const inFlight = new Map();
+  const stationHistory = loadStationHistory(historyFile, historyTtlMs);
+
+  function mergeWithStationHistory(liveStations, lat, lon, radius, generatedAtMs) {
+    const cutoff = generatedAtMs - historyTtlMs;
+    for (const [id, station] of stationHistory) {
+      if (station.lastSeenAtMs < cutoff) stationHistory.delete(id);
+    }
+
+    const lastSeenAt = new Date(generatedAtMs).toISOString();
+    const currentStations = liveStations.map((station) => {
+      const current = { ...station, current: true, lastSeenAt };
+      stationHistory.set(station.id, { ...current, lastSeenAtMs: generatedAtMs });
+      return current;
+    });
+    const currentIds = new Set(currentStations.map((station) => station.id));
+    const oldest = [...stationHistory.values()]
+      .sort((a, b) => b.lastSeenAtMs - a.lastSeenAtMs)
+      .slice(MAX_REMEMBERED_STATIONS);
+    oldest.forEach((station) => stationHistory.delete(station.id));
+    const unavailableStations = filterStations([...stationHistory.values()], lat, lon, radius)
+      .filter((station) => !currentIds.has(station.id))
+      .map(({ lastSeenAtMs, ...station }) => ({
+        ...station,
+        current: false,
+        known: false,
+        available: 0,
+        unknown: station.total,
+      }));
+
+    persistStationHistory(historyFile, stationHistory);
+    return [...currentStations, ...unavailableStations];
+  }
 
   function findCached(lat, lon, radius, maxAge) {
     const centrePrefix = `${lat.toFixed(5)}:${lon.toFixed(5)}:`;
@@ -75,13 +146,14 @@ export function createChargeNearbyServer({
     const request = (async () => {
       try {
         const result = await fetchStationsAround({ lat, lon, radiusM: radius, apiKey, fetchImpl });
+        const generatedAtMs = Date.now();
         const entry = {
           source: "EnBW mobility+",
-          generatedAt: new Date().toISOString(),
-          generatedAtMs: Date.now(),
+          generatedAt: new Date(generatedAtMs).toISOString(),
+          generatedAtMs,
           radius,
           requestCount: result.requestCount,
-          stations: result.stations,
+          stations: mergeWithStationHistory(result.stations, lat, lon, radius, generatedAtMs),
         };
         cache.set(key, entry);
         if (cache.size > 50) cache.delete(cache.keys().next().value);
@@ -107,6 +179,7 @@ export function createChargeNearbyServer({
         source: "EnBW mobility+",
         configured: Boolean(apiKey),
         cachedSearches: cache.size,
+        rememberedStations: stationHistory.size,
       });
       return;
     }

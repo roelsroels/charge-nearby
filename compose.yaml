@@ -8,5 +8,12 @@ services:
       PORT: 8080
       CACHE_TTL_MS: 60000
       STALE_TTL_MS: 900000
+      STATION_HISTORY_FILE: /data/stations.json
+      STATION_HISTORY_TTL_MS: 2592000000
     ports:
       - "8080:8080"
+    volumes:
+      - charge-nearby-data:/data
+
+volumes:
+  charge-nearby-data:

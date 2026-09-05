@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import { createChargeNearbyServer } from "../server.mjs";
@@ -38,6 +41,7 @@ test("health endpoint reports whether the key is configured", async () => {
       source: "EnBW mobility+",
       configured: false,
       cachedSearches: 0,
+      rememberedStations: 0,
     });
   });
 });
@@ -79,6 +83,41 @@ test("charger endpoint validates radius and Netherlands coverage", async () => {
     const outside = await fetch(`${baseUrl}/api/chargers?lat=48.86&lon=2.35&radius=500`);
     assert.equal(outside.status, 400);
     assert.equal(upstreamRequests, 1);
+  });
+});
+
+test("previously seen stations remain visible without current EnBW data", async (t) => {
+  const historyDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "charge-nearby-history-"));
+  const historyFile = path.join(historyDirectory, "stations.json");
+  t.after(() => fs.rmSync(historyDirectory, { recursive: true, force: true }));
+  const query = "/api/chargers?lat=52.37312&lon=4.89319&radius=500";
+
+  await withServer({
+    apiKey: "test-key",
+    historyFile,
+    fetchImpl: async () => new Response(JSON.stringify(stationPayload), { status: 200 }),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}${query}`);
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.stations[0].current, true);
+    assert.match(payload.stations[0].lastSeenAt, /^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  await withServer({
+    apiKey: "test-key",
+    historyFile,
+    fetchImpl: async () => new Response("[]", { status: 200 }),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}${query}`);
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.stations.length, 1);
+    assert.equal(payload.stations[0].id, "enbw-123456");
+    assert.equal(payload.stations[0].current, false);
+    assert.equal(payload.stations[0].known, false);
+    assert.equal(payload.stations[0].available, 0);
+    assert.equal("lastSeenAtMs" in payload.stations[0], false);
   });
 });
 

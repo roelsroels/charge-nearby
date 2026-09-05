@@ -112,6 +112,7 @@
   }
 
   function availabilityState(station) {
+    if (station.current === false) return { className: " unavailable", text: "No current data" };
     if (!station.known || !station.total) return { className: " unknown", text: "Status unknown" };
     if (station.available === 0) return { className: " busy", text: `All ${station.total} occupied` };
     return {
@@ -122,7 +123,7 @@
 
   function stationCard(station) {
     const article = document.createElement("article");
-    article.className = `station-card${favorites.has(station.id) ? " is-favorite" : ""}`;
+    article.className = `station-card${favorites.has(station.id) ? " is-favorite" : ""}${station.current === false ? " is-unavailable" : ""}`;
     article.tabIndex = 0;
     article.dataset.stationId = station.id;
 
@@ -233,7 +234,7 @@
   }
 
   function pinIcon(station) {
-    const state = !station.known ? " unknown" : station.available === 0 ? " busy" : "";
+    const state = station.current === false ? " unavailable" : !station.known ? " unknown" : station.available === 0 ? " busy" : "";
     const favorite = favorites.has(station.id) ? " favorite" : "";
     const label = station.known && station.total ? `${station.available}/${station.total}` : "?";
     const favoriteBadge = favorite ? '<i aria-hidden="true">♥</i>' : "";
@@ -245,6 +246,7 @@
       .map((station) => ({ ...station, distance: haversineMetres(searchCentre, station.position) }))
       .filter((station) => station.distance <= activeRadius)
       .sort((a, b) => Number(favorites.has(b.id)) - Number(favorites.has(a.id))
+        || Number(b.current !== false) - Number(a.current !== false)
         || a.distance - b.distance
         || b.available - a.available);
   }
@@ -366,7 +368,8 @@
         ...station,
         position: [Number(station.position[0]), Number(station.position[1])],
         available: Number(station.available) || 0,
-        total: Number(station.total) || 0
+        total: Number(station.total) || 0,
+        current: station.current !== false
       }));
     updateDataBadge();
     return payload;

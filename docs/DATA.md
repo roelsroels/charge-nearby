@@ -9,6 +9,7 @@ Charge Nearby now uses an on-demand local service because the EnBW endpoint reje
 5. EnBW can return grouped map markers without station IDs. The server follows each group viewport until it has individual stations, deduplicates them by EnBW station ID, and applies an exact great-circle radius filter.
 6. Only fields needed by the interface are returned: station ID, coordinates, address, operator, connector types, power, total/available/unknown counts, opening, payment and accessibility indicators.
 7. Successful searches are cached in memory for 60 seconds. A larger-radius cached search can satisfy a smaller-radius request around the same centre. Cached data up to 15 minutes old is used as a fallback during temporary EnBW failures.
+8. Successfully returned stations are remembered for 30 days. If a later successful response omits a remembered station inside the requested radius, the server returns its last-known location as `No current data`; the interface renders it in gray. Docker Compose persists this catalogue across container restarts.
 
 ## Security and privacy
 
@@ -16,6 +17,7 @@ Charge Nearby now uses an on-demand local service because the EnBW endpoint reje
 - `.env` is ignored by Git.
 - The server binds to `127.0.0.1` by default. Set `HOST=0.0.0.0` only for a trusted LAN, VPN or protected reverse proxy.
 - The application has no login screen or built-in access control.
+- The persisted station catalogue contains public station metadata only and no searched postcodes or user identifiers.
 - A postcode is sent to PDOK from the browser. The resulting coordinates and radius are sent to the private Charge Nearby server, which forwards only bounding-box coordinates to EnBW.
 
 ## Upstream behavior
