@@ -6,6 +6,8 @@ const html = fs.readFileSync(new URL("../html/index.html", import.meta.url), "ut
 const css = fs.readFileSync(new URL("../html/styles.css", import.meta.url), "utf8");
 const js = fs.readFileSync(new URL("../html/app.js", import.meta.url), "utf8");
 const compose = fs.readFileSync(new URL("../compose.yaml", import.meta.url), "utf8");
+const dockerfile = fs.readFileSync(new URL("../Dockerfile", import.meta.url), "utf8");
+const nginx = fs.readFileSync(new URL("../nginx/charge-nearby.conf.example", import.meta.url), "utf8");
 
 test("page exposes the charging search", () => {
   assert.match(html, /id="charger-search"/);
@@ -20,7 +22,7 @@ test("page exposes the charging search", () => {
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.0\.6<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.0\.7<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
@@ -76,8 +78,11 @@ test("stations omitted by a later response remain visibly unavailable", () => {
   assert.match(js, /Number\(b\.current !== false\) - Number\(a\.current !== false\)/);
   assert.match(css, /\.station-card\.is-unavailable/);
   assert.match(css, /\.charger-pin\.unavailable/);
-  assert.match(compose, /STATION_HISTORY_FILE:\s*\/data\/stations\.json/);
-  assert.match(compose, /charge-nearby-data:\/data/);
+  assert.match(dockerfile, /ENV STATION_HISTORY_FILE=\/data\/stations\.json/);
+  assert.match(dockerfile, /VOLUME \["\/data"\]/);
+  assert.match(compose, /- "8089:8080"/);
+  assert.doesNotMatch(compose, /STATION_HISTORY_FILE/);
+  assert.match(nginx, /proxy_pass http:\/\/127\.0\.0\.1:8089/);
 });
 
 test("responsive and reduced-motion rules are present", () => {

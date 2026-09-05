@@ -4,7 +4,7 @@
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
-Current release: **v1.0.6**
+Current release: **v1.0.7**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
@@ -31,7 +31,7 @@ Put the current EnBW browser key in `.env`, then start the service:
 docker compose up -d --build
 ```
 
-Open `http://localhost:8080`. From another device on the same network, use `http://<server-lan-ip>:8080`.
+Open `http://localhost:8089`. From another device on the same network, use `http://<server-lan-ip>:8089`.
 
 The `.env` file is ignored by Git. Do not commit the real key.
 
@@ -64,7 +64,7 @@ docker compose up -d --force-recreate
 The health endpoint reports whether a key is configured without exposing it:
 
 ```sh
-curl http://localhost:8080/api/health
+curl http://localhost:8089/api/health
 ```
 
 ## Reverse proxy
@@ -81,7 +81,7 @@ Keep this deployment behind a private LAN, VPN, firewall, or authenticated rever
 - Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.
 - The last successfully searched postcode is stored in the current browser and restored on the next visit.
 - Data-age labels continue updating while the page is open and refresh immediately when an idle tab becomes active again.
-- Stations seen during the previous 30 days remain visible in gray as `No current data` when a successful EnBW response temporarily omits them. Docker Compose persists this last-seen catalogue in the `charge-nearby-data` volume.
+- Stations seen during the previous 30 days remain visible in gray as `No current data` when a successful EnBW response temporarily omits them. The Docker image stores this last-seen catalogue in its `/data` volume without requiring extra Compose configuration.
 - Dense searches can require many EnBW requests because the upstream API returns grouped markers. The service expands those groups with a concurrency and request limit.
 - An available connector does not guarantee an empty or accessible parking space.
 - Operators can be named differently across roaming providers.
