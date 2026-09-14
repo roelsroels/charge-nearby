@@ -6,7 +6,7 @@ limit_conn_zone $binary_remote_addr zone=charge_nearby_api_connections:10m;
 server {
     listen 80;
     listen [::]:80;
-    server_name <YOUR OWN DOMAINNAME>;
+    server_name example.com;
 
     return 301 https://$host$request_uri;
 }
@@ -20,10 +20,10 @@ server {
     listen [::]:443 quic;
     http3 on;
 
-    server_name <YOUR OWN DOMAINNAME>;
+    server_name example.com;
 
-    ssl_certificate <YOUR OWN CERTIFICATE FILE PATH>/fullchain.cer;
-    ssl_certificate_key <YOUR OWN CERTIFICATE KEYFILE PATH>;
+    ssl_certificate /path/to/fullchain.cer;
+    ssl_certificate_key /path/to/private.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_cache shared:charge_ssl:10m;
     ssl_session_timeout 1d;
@@ -39,7 +39,7 @@ server {
     add_header Cross-Origin-Embedder-Policy "credentialless" always;
     add_header Cross-Origin-Opener-Policy "same-origin" always;
     add_header Cross-Origin-Resource-Policy "same-origin" always;
-    
+
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; connect-src 'self' https://api.pdok.nl https://tile.openstreetmap.org; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' https://tile.openstreetmap.org; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests" always;
     add_header Permissions-Policy "camera=(), microphone=()" always;

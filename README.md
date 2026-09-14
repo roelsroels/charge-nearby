@@ -4,7 +4,7 @@
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
-Current release: **v1.0.7**
+Current release: **v1.1.0**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
@@ -81,7 +81,7 @@ look for `"configured":true` in the response.
 
 ## Reverse proxy
 
-The Node service must handle both the website and `/api/chargers`. Do not serve `html/` by itself. An nginx reverse-proxy example is available in `nginx/charge-nearby.conf.example`.
+The Node service must handle both the website and `/api/chargers`. Do not serve `html/` by itself. An nginx reverse-proxy example is available in `nginx/charge-nearby.conf.example`. Replace its example domain and certificate paths with your own before installing it.
 
 Proxy to `http://127.0.0.1:8089`; do not change the Compose port binding to
 `8089:8080` for a public deployment. The browser needs public access to the website
