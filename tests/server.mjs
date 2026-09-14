@@ -67,6 +67,86 @@ test("charger endpoint caches successful EnBW searches", async () => {
   });
 });
 
+test("charger API rejects HEAD without starting upstream work", async () => {
+  let upstreamRequests = 0;
+  const fetchImpl = async () => {
+    upstreamRequests += 1;
+    return new Response(JSON.stringify(stationPayload), { status: 200 });
+  };
+  await withServer({ apiKey: "test-key", fetchImpl }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/chargers?lat=52.37312&lon=4.89319&radius=500`, {
+      method: "HEAD",
+    });
+    assert.equal(response.status, 405);
+    assert.equal(response.headers.get("allow"), "GET");
+    assert.equal(upstreamRequests, 0);
+  });
+});
+
+test("charger search capacity rejects only new uncached work", async () => {
+  let releaseSlowSearch;
+  let markSlowSearchStarted;
+  let upstreamRequests = 0;
+  const slowSearchStarted = new Promise((resolve) => {
+    markSlowSearchStarted = resolve;
+  });
+  const slowSearchReleased = new Promise((resolve) => {
+    releaseSlowSearch = resolve;
+  });
+  const fetchImpl = async () => {
+    upstreamRequests += 1;
+    if (upstreamRequests === 2) {
+      markSlowSearchStarted();
+      await slowSearchReleased;
+    }
+    return new Response(JSON.stringify(stationPayload), { status: 200 });
+  };
+
+  await withServer({
+    apiKey: "test-key",
+    fetchImpl,
+    cacheTtlMs: 60000,
+    maxConcurrentSearches: 1,
+  }, async (baseUrl) => {
+    const cachedQuery = "/api/chargers?lat=52.37312&lon=4.89319&radius=500";
+    const slowQuery = "/api/chargers?lat=52.37412&lon=4.89319&radius=500";
+    const otherQuery = "/api/chargers?lat=52.37512&lon=4.89319&radius=500";
+
+    const warmResponse = await fetch(`${baseUrl}${cachedQuery}`);
+    assert.equal(warmResponse.status, 200);
+    assert.equal((await warmResponse.json()).cache, "miss");
+
+    const slowResponsePromise = fetch(`${baseUrl}${slowQuery}`);
+    await slowSearchStarted;
+    const deduplicatedResponsePromise = fetch(`${baseUrl}${slowQuery}`);
+
+    const cachedResponse = await fetch(`${baseUrl}${cachedQuery}`);
+    assert.equal(cachedResponse.status, 200);
+    assert.equal((await cachedResponse.json()).cache, "hit");
+
+    const saturatedResponse = await fetch(`${baseUrl}${otherQuery}`);
+    assert.equal(saturatedResponse.status, 503);
+    assert.equal(saturatedResponse.headers.get("retry-after"), "1");
+    assert.deepEqual(await saturatedResponse.json(), {
+      error: "Charger search capacity is temporarily busy; try again shortly",
+    });
+    assert.equal(upstreamRequests, 2);
+
+    releaseSlowSearch();
+    const [slowResponse, deduplicatedResponse] = await Promise.all([
+      slowResponsePromise,
+      deduplicatedResponsePromise,
+    ]);
+    assert.equal(slowResponse.status, 200);
+    assert.equal(deduplicatedResponse.status, 200);
+    assert.equal(upstreamRequests, 2);
+
+    const resumedResponse = await fetch(`${baseUrl}${otherQuery}`);
+    assert.equal(resumedResponse.status, 200);
+    assert.equal(upstreamRequests, 3);
+  });
+});
+
 test("charger endpoint validates radius and Netherlands coverage", async () => {
   let upstreamRequests = 0;
   const fetchImpl = async () => {
@@ -126,6 +206,9 @@ test("server continues to serve the frontend", async () => {
     const response = await fetch(baseUrl);
     assert.equal(response.status, 200);
     assert.match(response.headers.get("content-type"), /text\/html/);
+    assert.match(response.headers.get("content-security-policy"), /frame-ancestors 'none'/);
+    assert.match(response.headers.get("content-security-policy"), /connect-src 'self' https:\/\/api\.pdok\.nl/);
+    assert.equal(response.headers.get("x-frame-options"), "DENY");
     assert.match(await response.text(), /Charge Nearby/);
   });
 });

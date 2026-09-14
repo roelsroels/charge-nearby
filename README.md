@@ -1,6 +1,6 @@
 # Charge Nearby
 
-[![Validate private site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
+[![Validate site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
@@ -15,7 +15,7 @@ The browser uses PDOK to locate the postcode. A dependency-free Node service fet
 ![Charge Nearby charger results for postcode 1012 JS](docs/screenshots/charge-nearby-1012-js-results.jpg)
 
 > [!IMPORTANT]
-> This is an unofficial private tool. It is not affiliated with or supported by EnBW. The EnBW web-map endpoint and browser key can change without notice.
+> This is an unofficial project. It is not affiliated with or supported by EnBW. The EnBW web-map endpoint and browser key can change without notice.
 
 ## Quick start with Docker
 
@@ -31,9 +31,15 @@ Put the current EnBW browser key in `.env`, then start the service:
 docker compose up -d --build
 ```
 
-Open `http://localhost:8089`. From another device on the same network, use `http://<server-lan-ip>:8089`.
+Open `http://localhost:8089` on the Docker host. The published port is deliberately
+bound to `127.0.0.1`, so it is not reachable directly over the LAN or internet.
+Use a reverse proxy for access from other devices.
 
 The `.env` file is ignored by Git. Do not commit the real key.
+
+By default, at most two distinct uncached EnBW searches run at once. Additional
+searches receive a short-lived busy response instead of forming an unbounded queue.
+`MAX_CONCURRENT_SEARCHES` can adjust this limit when needed.
 
 ## Run directly with Node.js
 
@@ -55,23 +61,41 @@ The EnBW map delivers a shared Azure API Management key to browsers:
 4. Find a request to `api.emp.emob-enbw.com`.
 5. Copy the `Ocp-Apim-Subscription-Key` request header into `.env` as `ENBW_API_KEY`.
 
-Restart the service after changing `.env`:
+> [!IMPORTANT]
+> Changing `.env` does not update an already-created container. `docker compose restart`
+> keeps the old environment variables, so it is not sufficient after replacing the EnBW key.
+> Recreate the container instead:
 
 ```sh
 docker compose up -d --force-recreate
 ```
 
-The health endpoint reports whether a key is configured without exposing it:
+Verify that the recreated container received a non-empty key:
 
 ```sh
 curl http://localhost:8089/api/health
 ```
 
+The health endpoint reports whether a key is configured without exposing it:
+look for `"configured":true` in the response.
+
 ## Reverse proxy
 
 The Node service must handle both the website and `/api/chargers`. Do not serve `html/` by itself. An nginx reverse-proxy example is available in `nginx/charge-nearby.conf.example`.
 
-Keep this deployment behind a private LAN, VPN, firewall, or authenticated reverse proxy. The application itself does not implement user authentication.
+Proxy to `http://127.0.0.1:8089`; do not change the Compose port binding to
+`8089:8080` for a public deployment. The browser needs public access to the website
+and `/api/chargers`, so protect that endpoint with rate and connection limits rather
+than an IP allowlist. Keep operational endpoints such as `/api/health` private. The
+nginx vhost sets CSP and frame protection explicitly, with the app providing the
+same headers as a fallback.
+
+After installing or updating the vhost, validate and reload nginx:
+
+```sh
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
 ## Data behavior
 
@@ -108,7 +132,7 @@ The automated tests use simulated EnBW responses and do not need a real key. A l
 - `server.mjs` — local HTTP server, cache and API route
 - `lib/enbw.mjs` — EnBW client, cluster expansion and data normalisation
 - `html/` — browser frontend
-- `compose.yaml` and `Dockerfile` — private-network container deployment
+- `compose.yaml` and `Dockerfile` — container deployment
 - `tests/` — unit, server and frontend smoke tests
 
 ## License

@@ -26,7 +26,18 @@ test("page exposes the charging search", () => {
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
+  assert.match(html, /href="vendor\/leaflet\/leaflet\.css\?v=1\.9\.4"/);
+  assert.match(html, /src="vendor\/leaflet\/leaflet\.js\?v=1\.9\.4"/);
+  assert.doesNotMatch(html, /unpkg\.com/);
   assert.equal(fs.existsSync(new URL("../html/og.png", import.meta.url)), true);
+  assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/LICENSE", import.meta.url)), true);
+  assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/leaflet.css", import.meta.url)), true);
+  assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/leaflet.js", import.meta.url)), true);
+  assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/images/layers.png", import.meta.url)), true);
+  assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/images/layers-2x.png", import.meta.url)), true);
+  assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/images/marker-icon.png", import.meta.url)), true);
+  assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/images/marker-icon-2x.png", import.meta.url)), true);
+  assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/images/marker-shadow.png", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../docs/screenshots/charge-nearby-1012-js-overview.jpg", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../docs/screenshots/charge-nearby-1012-js-results.jpg", import.meta.url)), true);
 });
@@ -80,8 +91,10 @@ test("stations omitted by a later response remain visibly unavailable", () => {
   assert.match(css, /\.charger-pin\.unavailable/);
   assert.match(dockerfile, /ENV STATION_HISTORY_FILE=\/data\/stations\.json/);
   assert.match(dockerfile, /VOLUME \["\/data"\]/);
-  assert.match(compose, /- "8089:8080"/);
+  assert.match(compose, /- "127\.0\.0\.1:8089:8080"/);
+  assert.doesNotMatch(compose, /- "8089:8080"/);
   assert.doesNotMatch(compose, /STATION_HISTORY_FILE/);
+  assert.match(compose, /MAX_CONCURRENT_SEARCHES: \$\{MAX_CONCURRENT_SEARCHES:-2\}/);
   assert.match(nginx, /proxy_pass http:\/\/127\.0\.0\.1:8089/);
 });
 
@@ -91,4 +104,18 @@ test("responsive and reduced-motion rules are present", () => {
   assert.doesNotMatch(css, /\.intro \{[^}]*min-height:\s*430px/);
   assert.match(css, /\.intro h1 \{[^}]*white-space:\s*nowrap/);
   assert.match(css, /\.finder \{[^}]*min-height:\s*540px/);
+});
+
+test("nginx example constrains the public API and browser capabilities", () => {
+  assert.match(nginx, /limit_req_zone \$binary_remote_addr zone=charge_nearby_api:10m rate=12r\/m/);
+  assert.match(nginx, /location = \/api\/chargers/);
+  assert.match(nginx, /limit_req zone=charge_nearby_api burst=4 nodelay/);
+  assert.match(nginx, /limit_conn charge_nearby_api_connections 2/);
+  assert.match(nginx, /location = \/api\/health/);
+  assert.match(nginx, /allow 192\.168\.1\.0\/24/);
+  assert.match(nginx, /location \^~ \/api\//);
+  assert.match(nginx, /add_header Content-Security-Policy .*frame-ancestors 'none'.* always;/);
+  assert.match(nginx, /add_header X-Frame-Options "DENY" always;/);
+  assert.match(nginx, /server_name charge\.roels\.com/);
+  assert.match(nginx, /return 301 https:\/\/\$host\$request_uri/);
 });

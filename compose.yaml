@@ -6,7 +6,8 @@ services:
       ENBW_API_KEY: ${ENBW_API_KEY:?Set ENBW_API_KEY in .env}
       HOST: 0.0.0.0
       PORT: 8080
-      CACHE_TTL_MS: 60000
-      STALE_TTL_MS: 900000
+      CACHE_TTL_MS: ${CACHE_TTL_MS:-60000}
+      STALE_TTL_MS: ${STALE_TTL_MS:-900000}
+      MAX_CONCURRENT_SEARCHES: ${MAX_CONCURRENT_SEARCHES:-2}
     ports:
-      - "8089:8080"
+      - "127.0.0.1:8089:8080"

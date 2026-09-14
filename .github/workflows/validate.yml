@@ -1,4 +1,4 @@
-name: Validate private site
+name: Validate site
 
 on:
   push:

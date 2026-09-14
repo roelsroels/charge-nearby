@@ -10,7 +10,21 @@ const defaultHtmlRoot = path.join(currentDirectory, "html");
 const NETHERLANDS_BOUNDS = Object.freeze({ minLat: 50.70, maxLat: 53.60, minLon: 3.20, maxLon: 7.30 });
 const ALLOWED_RADII = new Set([250, 500, 1000, 2000]);
 const DEFAULT_HISTORY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const DEFAULT_MAX_CONCURRENT_SEARCHES = 2;
 const MAX_REMEMBERED_STATIONS = 5000;
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "connect-src 'self' https://api.pdok.nl https://tile.openstreetmap.org",
+  "font-src 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "img-src 'self' https://tile.openstreetmap.org",
+  "object-src 'none'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "upgrade-insecure-requests",
+].join("; ");
 const MIME_TYPES = new Map([
   [".css", "text/css; charset=utf-8"],
   [".html", "text/html; charset=utf-8"],
@@ -32,6 +46,18 @@ function jsonResponse(response, status, payload, headers = {}) {
 function publicError(error) {
   if (error instanceof EnbwApiError) return { status: error.status, message: error.message };
   return { status: 500, message: "Unexpected server error" };
+}
+
+class SearchCapacityError extends Error {
+  constructor() {
+    super("Charger search capacity is temporarily busy; try again shortly");
+    this.name = "SearchCapacityError";
+  }
+}
+
+function positiveInteger(value, fallback) {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number > 0 ? number : fallback;
 }
 
 function isWithinNetherlands(lat, lon) {
@@ -90,9 +116,11 @@ export function createChargeNearbyServer({
   staleTtlMs = Number(process.env.STALE_TTL_MS) || 900000,
   historyTtlMs = Number(process.env.STATION_HISTORY_TTL_MS) || DEFAULT_HISTORY_TTL_MS,
   historyFile = process.env.STATION_HISTORY_FILE || null,
+  maxConcurrentSearches = process.env.MAX_CONCURRENT_SEARCHES,
 } = {}) {
   const cache = new Map();
   const inFlight = new Map();
+  const concurrentSearchLimit = positiveInteger(maxConcurrentSearches, DEFAULT_MAX_CONCURRENT_SEARCHES);
   const stationHistory = loadStationHistory(historyFile, historyTtlMs);
 
   function mergeWithStationHistory(liveStations, lat, lon, radius, generatedAtMs) {
@@ -143,6 +171,7 @@ export function createChargeNearbyServer({
 
     const key = cacheKey(lat, lon, radius);
     if (inFlight.has(key)) return inFlight.get(key);
+    if (inFlight.size >= concurrentSearchLimit) throw new SearchCapacityError();
     const request = (async () => {
       try {
         const result = await fetchStationsAround({ lat, lon, radiusM: radius, apiKey, fetchImpl });
@@ -214,6 +243,10 @@ export function createChargeNearbyServer({
         stations: result.stations,
       });
     } catch (error) {
+      if (error instanceof SearchCapacityError) {
+        jsonResponse(response, 503, { error: error.message }, { "Retry-After": "1" });
+        return;
+      }
       const { status, message } = publicError(error);
       console.error(`[charge-nearby] EnBW search failed: ${error.message}`);
       jsonResponse(response, status, { error: message });
@@ -249,22 +282,30 @@ export function createChargeNearbyServer({
     const extension = path.extname(filePath).toLowerCase();
     response.writeHead(200, {
       "Cache-Control": extension === ".html" ? "no-cache" : "public, max-age=3600",
+      "Content-Security-Policy": CONTENT_SECURITY_POLICY,
       "Content-Length": stats.size,
       "Content-Type": MIME_TYPES.get(extension) || "application/octet-stream",
       "Referrer-Policy": "strict-origin-when-cross-origin",
       "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
     });
     if (request.method === "HEAD") response.end();
     else fs.createReadStream(filePath).pipe(response);
   }
 
   return http.createServer(async (request, response) => {
-    if (!request.url || !["GET", "HEAD"].includes(request.method || "")) {
-      response.writeHead(405, { Allow: "GET, HEAD" }).end("Method not allowed");
+    if (!request.url) {
+      response.writeHead(400).end("Bad request");
       return;
     }
     const url = new URL(request.url, "http://localhost");
-    if (url.pathname.startsWith("/api/")) await handleApi(request, response, url);
+    const isApiRequest = url.pathname.startsWith("/api/");
+    const allowedMethods = isApiRequest ? ["GET"] : ["GET", "HEAD"];
+    if (!allowedMethods.includes(request.method || "")) {
+      response.writeHead(405, { Allow: allowedMethods.join(", ") }).end("Method not allowed");
+      return;
+    }
+    if (isApiRequest) await handleApi(request, response, url);
     else serveStatic(request, response, url);
   });
 }
