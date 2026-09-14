@@ -6,7 +6,7 @@ limit_conn_zone $binary_remote_addr zone=charge_nearby_api_connections:10m;
 server {
     listen 80;
     listen [::]:80;
-    server_name charge.roels.com;
+    server_name <YOUR OWN DOMAINNAME>;
 
     return 301 https://$host$request_uri;
 }
@@ -20,10 +20,10 @@ server {
     listen [::]:443 quic;
     http3 on;
 
-    server_name charge.roels.com;
+    server_name <YOUR OWN DOMAINNAME>;
 
-    ssl_certificate /root/.acme.sh/charge.roels.com_ecc/fullchain.cer;
-    ssl_certificate_key /root/.acme.sh/charge.roels.com_ecc/charge.roels.com.key;
+    ssl_certificate <YOUR OWN CERTIFICATE FILE PATH>/fullchain.cer;
+    ssl_certificate_key <YOUR OWN CERTIFICATE KEYFILE PATH>;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_cache shared:charge_ssl:10m;
     ssl_session_timeout 1d;
