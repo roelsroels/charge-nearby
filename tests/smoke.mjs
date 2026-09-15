@@ -8,6 +8,7 @@ const js = fs.readFileSync(new URL("../html/app.js", import.meta.url), "utf8");
 const compose = fs.readFileSync(new URL("../compose.yaml", import.meta.url), "utf8");
 const dockerfile = fs.readFileSync(new URL("../Dockerfile", import.meta.url), "utf8");
 const nginx = fs.readFileSync(new URL("../nginx/charge-nearby.conf.example", import.meta.url), "utf8");
+const readme = fs.readFileSync(new URL("../README.md", import.meta.url), "utf8");
 
 test("page exposes the charging search", () => {
   assert.match(html, /id="charger-search"/);
@@ -124,4 +125,6 @@ test("nginx example constrains the public API and browser capabilities", () => {
   assert.match(nginx, /add_header Cross-Origin-Opener-Policy "same-origin" always;/);
   assert.match(nginx, /add_header Cross-Origin-Resource-Policy "same-origin" always;/);
   assert.match(nginx, /return 301 https:\/\/\$host\$request_uri/);
+  assert.match(readme, /Existing nginx installations upgrading to v1\.1\.1 must add/);
+  assert.match(readme, /HTML 404 page headed `nginx`/);
 });

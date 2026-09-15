@@ -83,6 +83,14 @@ look for `"configured":true` in the response.
 
 The Node service must handle the website, `/api/chargers` and `/api/charger-details`. Do not serve `html/` by itself. An nginx reverse-proxy example is available in `nginx/charge-nearby.conf.example`. Replace its example domain and certificate paths with your own before installing it.
 
+> [!IMPORTANT]
+> **Existing nginx installations upgrading to v1.1.1 must add the exact
+> `location = /api/charger-details` block from the example vhost.** The connector
+> button is part of the public frontend and cannot call the Docker service directly.
+> If this location is missing, the fail-closed `location ^~ /api/` block returns an
+> nginx HTML `404 Not Found`, even though the v1.1.1 application and EnBW key are
+> working correctly. This nginx-only change does not require recreating Docker.
+
 Proxy to `http://127.0.0.1:8089`; do not change the Compose port binding to
 `8089:8080` for a public deployment. The browser needs public access to the website
 and both public API routes, so protect those endpoints with rate and connection limits rather
@@ -96,6 +104,22 @@ After installing or updating the vhost, validate and reload nginx:
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
+Confirm that nginx is forwarding the new route:
+
+```sh
+curl -i 'https://your-domain.example/api/charger-details?id=invalid'
+```
+
+A correctly forwarded request returns an application JSON response with HTTP 400:
+
+```json
+{"error":"Provide a valid station ID"}
+```
+
+An HTML 404 page headed `nginx` means the exact location block is still missing
+from the active vhost. Check the file under `sites-enabled`, not only the repository
+example, then validate and reload nginx again.
 
 ## Data behavior
 

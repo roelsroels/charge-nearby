@@ -13,6 +13,15 @@ Charge Nearby now uses an on-demand local service because the EnBW endpoint reje
 9. Successfully returned stations are remembered for 30 days. If a later successful response omits a remembered station inside the requested radius, the server returns its last-known location as `No current data`; the interface renders it in gray. The Docker image stores this catalogue in its `/data` volume.
 10. The public reverse proxy rate-limits searches and connector-detail requests per client, while the application allows at most two distinct uncached searches to run concurrently. Exact duplicate and cached searches do not consume another application slot.
 
+## Reverse-proxy requirement
+
+The browser-facing `/api/charger-details` route was added in v1.1.1. Existing
+nginx installations must add its exact location block from
+`nginx/charge-nearby.conf.example` to the active HTTPS vhost. Otherwise the
+fail-closed `/api/` location returns nginx's HTML 404 page before the request can
+reach the Node service. Adding and reloading this nginx configuration is sufficient;
+the container does not need to be recreated for this routing-only change.
+
 ## Security and privacy
 
 - The real EnBW key is read only from the server environment and is never included in frontend files or API responses.
