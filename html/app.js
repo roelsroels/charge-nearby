@@ -286,6 +286,15 @@
     return { value: normalized, label: labels[normalized] || normalized.replaceAll("_", " ").toLowerCase() };
   }
 
+  function connectorAgeText(status, timestamp) {
+    const age = relativeAgeText(timestamp);
+    if (!age) return null;
+    const connectedStates = new Set(["OCCUPIED", "CHARGING", "SUSPENDED_EV", "SUSPENDED_EVSE"]);
+    if (!connectedStates.has(String(status || "").toUpperCase())) return age;
+    if (age === "updated just now") return "connected <1 minute";
+    return `connected ~${age.replace(/^updated /, "").replace(/ ago$/, "")}`;
+  }
+
   function renderConnectorDetails(container, payload) {
     container.replaceChildren();
     if (!payload.chargePoints?.length) {
@@ -318,7 +327,7 @@
         return parts.join(" · ");
       });
       const meta = document.createElement("small");
-      const updated = relativeAgeText(chargePoint.updatedAt);
+      const updated = connectorAgeText(chargePoint.status, chargePoint.updatedAt);
       meta.textContent = [descriptions.join(" / "), updated].filter(Boolean).join(" · ");
       row.append(heading, meta);
       list.append(row);

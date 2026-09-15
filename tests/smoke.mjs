@@ -85,6 +85,13 @@ test("data freshness keeps updating in idle sessions", () => {
   assert.match(js, /window\.addEventListener\("focus", updateDataFreshnessLabels\)/);
 });
 
+test("occupied connector age is presented as an approximate connected duration", () => {
+  assert.match(js, /function connectorAgeText/);
+  assert.match(js, /"OCCUPIED", "CHARGING", "SUSPENDED_EV", "SUSPENDED_EVSE"/);
+  assert.match(js, /connected ~\$\{age/);
+  assert.match(readme, /approximate time since EnBW recorded that occupied state/);
+});
+
 test("stations omitted by a later response remain visibly unavailable", () => {
   assert.match(html, /No current data/);
   assert.match(js, /station\.current === false/);

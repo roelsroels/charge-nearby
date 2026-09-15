@@ -127,7 +127,7 @@ example, then validate and reload nginx again.
 - Supported radii are 250 m, 500 m, 1 km and 2 km.
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
 - Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.
-- Map popups show operator, distance, plug type, maximum power and confirmed access indicators. Individual connector status, power, cable and update time are fetched only when `Show connector details` is selected; tariff data is deliberately excluded.
+- Map popups show operator, distance, plug type, maximum power and confirmed access indicators. Individual connector status, power, cable and update time are fetched only when `Show connector details` is selected. For an occupied connector, the interface shows the approximate time since EnBW recorded that occupied state as `connected ~…`; this indicates how long the car appears to have been plugged in, not whether power is flowing. Tariff data is deliberately excluded.
 - The last successfully searched postcode is stored in the current browser and restored on the next visit.
 - Data-age labels continue updating while the page is open and refresh immediately when an idle tab becomes active again.
 - Stations seen during the previous 30 days remain visible in gray as `No current data` when a successful EnBW response temporarily omits them. The Docker image stores this last-seen catalogue in its `/data` volume without requiring extra Compose configuration.
