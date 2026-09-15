@@ -1,0 +1,18 @@
+# Block AI Crawlers and Scraping Engines
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: Google-Extended
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Meta-ExternalAgent
+User-agent: AmazonBot
+User-agent: Applebot-Extended
+User-agent: Bytespider
+User-agent: CCBot
+Disallow: /
+
+# Allow normal search engines to index the landing page
+User-agent: *
+Allow: /
