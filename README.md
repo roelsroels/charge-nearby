@@ -4,19 +4,22 @@
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
-Current release: **v1.1.2**
+Current release: **v1.1.3**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
 ## Screenshots
 
-![Charge Nearby map for postcode 1012 JS with on-demand connector details and approximate connected durations](docs/screenshots/charge-nearby-1012-js-overview.jpg)
+![Charge Nearby longest-connected overview for postcode 1012 JS](docs/screenshots/charge-nearby-1012-js-overview.jpg)
 
 ![Charge Nearby charger results for postcode 1012 JS with a favorite location prioritized](docs/screenshots/charge-nearby-1012-js-results.jpg)
 
-The connector panel is loaded only after selecting `Show connector details`.
-For occupied connectors, `connected ~…` is calculated from EnBW's status timestamp
-and represents approximate plug-in time, regardless of whether power is flowing.
+The `Longest connected` button ranks occupied connectors in the selected search
+circle by their approximate plug-in duration. Selecting a ranked connector opens
+its station on the map. Individual connector panels are loaded only after selecting
+`Show connector details`. For occupied connectors, `connected ~…` is calculated
+from EnBW's status timestamp and represents approximate plug-in time, regardless
+of whether power is flowing.
 
 > [!IMPORTANT]
 > This is an unofficial project. It is not affiliated with or supported by EnBW. The EnBW web-map endpoint and browser key can change without notice.

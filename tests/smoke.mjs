@@ -18,12 +18,12 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.1\.2/);
-  assert.match(html, /styles\.css\?v=1\.1\.2/);
+  assert.match(html, /app\.js\?v=1\.1\.3/);
+  assert.match(html, /styles\.css\?v=1\.1\.3/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.1\.2<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.1\.3<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /class="connected-overview-button"/);
@@ -43,7 +43,8 @@ test("page exposes the charging search", () => {
   assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/images/marker-shadow.png", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../docs/screenshots/charge-nearby-1012-js-overview.jpg", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../docs/screenshots/charge-nearby-1012-js-results.jpg", import.meta.url)), true);
-  assert.match(readme, /on-demand connector details and approximate connected durations/);
+  assert.match(readme, /longest-connected overview for postcode 1012 JS/);
+  assert.match(readme, /ranks occupied connectors in the selected search/);
   assert.match(readme, /represents approximate plug-in time/);
 });
 
