@@ -295,6 +295,11 @@
     return `connected ~${age.replace(/^updated /, "").replace(/ ago$/, "")}`;
   }
 
+  function approximateConnectedDuration(timestamp) {
+    const text = connectorAgeText("OCCUPIED", timestamp);
+    return text ? text.replace(/^connected /, "") : "duration unknown";
+  }
+
   function renderConnectorDetails(container, payload) {
     container.replaceChildren();
     if (!payload.chargePoints?.length) {
@@ -364,6 +369,76 @@
     } finally {
       button.disabled = false;
       markers.get(station.id)?.getPopup()?.update();
+    }
+  }
+
+  function renderConnectedOverview(payload) {
+    const container = byId("connected-overview-content");
+    container.replaceChildren();
+    const connected = Array.isArray(payload.connected) ? payload.connected : [];
+    if (!connected.length) {
+      container.className = "connected-overview-content connected-overview-message";
+      container.textContent = "No occupied connectors with a usable status timestamp were found in this circle.";
+      return;
+    }
+
+    container.className = "connected-overview-content";
+    const summary = document.createElement("p");
+    summary.className = "connected-overview-summary";
+    const failureNote = payload.failedStations ? ` · ${payload.failedStations} unavailable` : "";
+    summary.textContent = `${connected.length} connected across ${payload.stationsScanned} scanned locations${failureNote} · longest first`;
+    const ranking = document.createElement("div");
+    ranking.className = "connected-ranking";
+    connected.slice(0, 20).forEach((item, index) => {
+      const row = document.createElement("button");
+      row.className = "connected-ranking-item";
+      row.type = "button";
+      row.title = "Show this station on the map";
+      const rank = document.createElement("span");
+      rank.className = "connected-rank";
+      rank.textContent = String(index + 1);
+      const location = document.createElement("span");
+      location.className = "connected-location";
+      const address = document.createElement("strong");
+      address.textContent = `${favorites.has(item.stationId) ? "♥ " : ""}${item.address || "Public charging location"}`;
+      const details = document.createElement("small");
+      const plug = item.plugs?.[0];
+      const plugText = [plug?.name || plug?.type, plug?.powerKw ? `${Math.round(plug.powerKw)} kW` : null]
+        .filter(Boolean).join(" · ");
+      details.textContent = [formatDistance(item.distance), plugText, item.chargePointId].filter(Boolean).join(" · ");
+      location.append(address, details);
+      const duration = document.createElement("span");
+      duration.className = "connected-duration";
+      duration.textContent = approximateConnectedDuration(item.updatedAt);
+      row.append(rank, location, duration);
+      row.addEventListener("click", () => {
+        byId("connected-overview-dialog").close();
+        document.querySelector(".map-panel").scrollIntoView({ behavior: "smooth", block: "center" });
+        window.setTimeout(() => markers.get(item.stationId)?.openPopup(), 350);
+      });
+      ranking.append(row);
+    });
+    container.append(summary, ranking);
+  }
+
+  async function openConnectedOverview() {
+    const dialog = byId("connected-overview-dialog");
+    const container = byId("connected-overview-content");
+    dialog.showModal();
+    container.className = "connected-overview-content connected-overview-message";
+    container.textContent = `Scanning connector status in the selected ${activeRadius < 1000 ? `${activeRadius} m` : `${activeRadius / 1000} km`} circle…`;
+    try {
+      const url = new URL(CHARGER_DETAIL_API_URL, window.location.href);
+      url.searchParams.set("mode", "overview");
+      url.searchParams.set("lat", String(searchCentre[0]));
+      url.searchParams.set("lon", String(searchCentre[1]));
+      url.searchParams.set("radius", String(activeRadius));
+      const response = await fetch(url, { cache: "no-store", headers: { Accept: "application/json" } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || `Charging service returned ${response.status}`);
+      renderConnectedOverview(payload);
+    } catch (error) {
+      container.textContent = `Could not build the overview: ${error.message}`;
     }
   }
 
@@ -621,6 +696,11 @@
     button.setAttribute("aria-pressed", String(!pressed));
     document.querySelector(".toggle-text").textContent = pressed ? "Show list" : "Back to map";
     (pressed ? document.querySelector(".map-panel") : byId("results")).scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.querySelector(".connected-overview-button").addEventListener("click", openConnectedOverview);
+  document.querySelector(".connected-dialog-close").addEventListener("click", () => {
+    byId("connected-overview-dialog").close();
   });
 
   document.addEventListener("visibilitychange", () => {

@@ -74,10 +74,11 @@ main { overflow: hidden; }
 .map-unavailable #map p { max-width: 300px; line-height: 1.5; }
 .map-summary { position: absolute; z-index: 500; left: 16px; right: 16px; bottom: 16px; min-height: 70px; padding: 12px 14px 12px 18px; border: 1px solid rgba(14,69,61,.13); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 20px; color: var(--ink); background: rgba(250,248,243,.94); box-shadow: 0 12px 32px rgba(27,49,45,.2); backdrop-filter: blur(12px); }
 .map-summary > div { display: grid; gap: 5px; }
+.map-summary-actions { display: flex !important; align-items: center; gap: 7px !important; }
 .summary-label { color: var(--ink-soft); font-size: 10px; }.summary-label strong { color: var(--ink); }
 .summary-number { font-size: 20px; letter-spacing: -.035em; }
-.map-list-toggle { min-height: 43px; padding: 0 14px; border: 1px solid var(--border); border-radius: 9px; display: inline-flex; align-items: center; gap: 8px; color: var(--ink); background: white; font-size: 11px; font-weight: 750; }
-.map-list-toggle:hover { background: var(--lime-soft); }
+.map-list-toggle, .connected-overview-button { min-height: 43px; padding: 0 14px; border: 1px solid var(--border); border-radius: 9px; display: inline-flex; align-items: center; gap: 8px; color: var(--ink); background: white; font-size: 11px; font-weight: 750; }
+.map-list-toggle:hover, .connected-overview-button:hover { background: var(--lime-soft); }
 .map-icon { font-size: 17px; }
 .leaflet-control-zoom { border: 0 !important; box-shadow: 0 7px 20px rgba(18,61,55,.18) !important; }
 .leaflet-control-zoom a { color: var(--ink) !important; border: 0 !important; }
@@ -154,6 +155,26 @@ main { overflow: hidden; }
 .empty-state { grid-column: 1 / -1; padding: 56px 30px; border: 1px dashed var(--border); border-radius: 15px; text-align: center; }
 .empty-state h3 { margin: 0 0 8px; font-size: 24px; }.empty-state p { margin: 0; color: var(--ink-soft); }
 
+.connected-dialog { width: min(620px, calc(100% - 28px)); max-height: min(680px, calc(100vh - 32px)); padding: 0; border: 1px solid var(--border); border-radius: 20px; color: var(--ink); background: var(--paper-soft); box-shadow: 0 30px 90px rgba(18,61,55,.32); }
+.connected-dialog::backdrop { background: rgba(7,31,27,.45); backdrop-filter: blur(3px); }
+.connected-dialog-header { padding: 24px 24px 0; display: flex; align-items: start; justify-content: space-between; gap: 24px; }
+.connected-dialog-header .eyebrow { margin-bottom: 6px; color: var(--green-2); }
+.connected-dialog h2 { margin: 0; font-size: 30px; letter-spacing: -.045em; }
+.connected-dialog-close { width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 50%; color: var(--ink); background: white; font-size: 23px; line-height: 1; }
+.connected-dialog-note { margin: 12px 24px 0; color: var(--ink-soft); font-size: 11px; line-height: 1.45; }
+.connected-overview-content { min-height: 120px; max-height: 470px; overflow: auto; padding: 18px 24px 24px; }
+.connected-overview-message { padding: 32px 12px; color: var(--ink-soft); text-align: center; font-size: 12px; line-height: 1.5; }
+.connected-overview-summary { margin: 0 0 10px; color: var(--ink-soft); font-size: 10px; }
+.connected-ranking { display: grid; gap: 7px; }
+.connected-ranking-item { width: 100%; padding: 12px; border: 1px solid var(--border-soft); border-radius: 11px; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; color: var(--ink); background: white; text-align: left; }
+.connected-ranking-item:hover { border-color: var(--green-2); background: var(--lime-soft); }
+.connected-rank { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: white; background: var(--green); font: 750 9px var(--mono); }
+.connected-location { min-width: 0; }
+.connected-location strong, .connected-location small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.connected-location strong { font-size: 12px; }
+.connected-location small { margin-top: 3px; color: var(--ink-soft); font: 600 8px var(--mono); }
+.connected-duration { color: #a13f2b; font-size: 11px; font-weight: 780; white-space: nowrap; }
+
 .data-note { width: min(1180px, calc(100% - 48px)); margin: 0 auto 110px; padding: 60px; border-radius: 24px; display: grid; grid-template-columns: .45fr 1.55fr; gap: 70px; color: white; background: var(--green); }
 .data-note h2 { margin: 0 0 26px; max-width: 690px; font-size: clamp(33px, 4.3vw, 58px); line-height: 1.02; letter-spacing: -.057em; }
 .data-note div p { max-width: 650px; margin: 0; color: rgba(255,255,255,.65); font-size: 14px; line-height: 1.6; }
@@ -179,6 +200,9 @@ footer a:hover { color: var(--green-2); }
   .search-panel { padding: 28px 22px; }
   .map-panel, #map { min-height: 480px; }
   .map-summary { left: 12px; right: 12px; bottom: 12px; }.summary-number { font-size: 18px; }
+  .map-summary-actions { gap: 5px !important; }
+  .map-list-toggle, .connected-overview-button { min-height: 40px; padding: 0 9px; font-size: 9px; }
+  .connected-dialog-header { padding: 20px 18px 0; }.connected-dialog-note { margin-left: 18px; margin-right: 18px; }.connected-overview-content { padding: 15px 18px 20px; }
   .results-header { align-items: start; }.results-total { display: none; }
   .station-card { min-height: 225px; padding: 21px; }.station-card h3 { font-size: 21px; }
   .data-note { padding: 38px 25px; grid-template-columns: 1fr; gap: 20px; }

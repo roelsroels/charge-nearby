@@ -17,9 +17,9 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://tile.openstreetmap.org">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=1.1.2">
+  <link rel="stylesheet" href="styles.css?v=1.1.2.1">
   <script src="vendor/leaflet/leaflet.js?v=1.9.4" defer></script>
-  <script src="app.js?v=1.1.2" defer></script>
+  <script src="app.js?v=1.1.2.1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#results">Skip to results</a>
@@ -95,10 +95,16 @@
             <span class="summary-label">Within <strong id="radius-summary">250 m</strong></span>
             <strong class="summary-number"><span id="available-count">0</span> available</strong>
           </div>
-          <button class="map-list-toggle" type="button" aria-pressed="false">
-            <span class="map-icon" aria-hidden="true">⌖</span>
-            <span class="toggle-text">Show list</span>
-          </button>
+          <div class="map-summary-actions">
+            <button class="connected-overview-button" type="button">
+              <span aria-hidden="true">◷</span>
+              <span>Longest connected</span>
+            </button>
+            <button class="map-list-toggle" type="button" aria-pressed="false">
+              <span class="map-icon" aria-hidden="true">⌖</span>
+              <span class="toggle-text">Show list</span>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -123,6 +129,18 @@
       </div>
     </section>
   </main>
+
+  <dialog class="connected-dialog" id="connected-overview-dialog" aria-labelledby="connected-overview-title">
+    <div class="connected-dialog-header">
+      <div>
+        <p class="eyebrow">SELECTED SEARCH CIRCLE</p>
+        <h2 id="connected-overview-title">Longest connected</h2>
+      </div>
+      <button class="connected-dialog-close" type="button" aria-label="Close longest connected overview">×</button>
+    </div>
+    <p class="connected-dialog-note">Ranked by the time since EnBW recorded each connector as occupied. This indicates approximate plug-in time, not whether power is flowing.</p>
+    <div class="connected-overview-content" id="connected-overview-content" aria-live="polite"></div>
+  </dialog>
 
   <footer>
     <div><strong>Charge Nearby</strong><p>Public charging across the Netherlands, searched by postcode.</p></div>

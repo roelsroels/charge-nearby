@@ -12,6 +12,7 @@ Charge Nearby now uses an on-demand local service because the EnBW endpoint reje
 8. Successful searches and connector-detail requests are cached in memory for 60 seconds. A larger-radius cached search can satisfy a smaller-radius request around the same centre. Cached search data up to 15 minutes old is used as a fallback during temporary EnBW failures.
 9. Successfully returned stations are remembered for 30 days. If a later successful response omits a remembered station inside the requested radius, the server returns its last-known location as `No current data`; the interface renders it in gray. The Docker image stores this catalogue in its `/data` volume.
 10. The public reverse proxy rate-limits searches and connector-detail requests per client, while the application allows at most two distinct uncached searches to run concurrently. Exact duplicate and cached searches do not consume another application slot.
+11. The `Longest connected` overview reuses `/api/charger-details` in overview mode. It scans current stations inside the cached search circle with at most three detail requests in flight, reuses the 60-second detail cache, and ranks occupied connectors by their status timestamp. A maximum of 40 stations per circle prevents a single overview from creating excessive upstream work; the interface displays at most the first 20 ranked connectors.
 
 ## Reverse-proxy requirement
 

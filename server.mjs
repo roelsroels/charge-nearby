@@ -14,6 +14,9 @@ const DEFAULT_MAX_CONCURRENT_SEARCHES = 2;
 const DEFAULT_DETAIL_CACHE_TTL_MS = 60000;
 const MAX_REMEMBERED_STATIONS = 5000;
 const MAX_CACHED_STATION_DETAILS = 100;
+const MAX_CONNECTED_OVERVIEW_STATIONS = 40;
+const CONNECTED_DETAIL_CONCURRENCY = 3;
+const CONNECTED_STATES = new Set(["OCCUPIED", "CHARGING", "SUSPENDED_EV", "SUSPENDED_EVSE"]);
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -73,6 +76,20 @@ function cacheKey(lat, lon, radius) {
 
 function filterStations(stations, lat, lon, radius) {
   return stations.filter((station) => haversineMetres([lat, lon], station.position) <= radius);
+}
+
+async function mapWithConcurrency(values, concurrency, mapper) {
+  const results = new Array(values.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < values.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await mapper(values[index]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, worker));
+  return results;
 }
 
 function loadStationHistory(historyFile, historyTtlMs) {
@@ -236,6 +253,66 @@ export function createChargeNearbyServer({
     return request;
   }
 
+  async function loadConnectedOverview(lat, lon, radius) {
+    const searchedArea = findCached(lat, lon, radius, staleTtlMs);
+    if (!searchedArea) {
+      throw new EnbwApiError("Run the charger search again before loading this overview", { status: 409 });
+    }
+    const areaStations = filterStations(searchedArea.stations, lat, lon, radius)
+      .filter((station) => station.current !== false);
+    if (areaStations.length > MAX_CONNECTED_OVERVIEW_STATIONS) {
+      throw new EnbwApiError(
+        `This circle contains ${areaStations.length} stations; choose a smaller radius to scan at most ${MAX_CONNECTED_OVERVIEW_STATIONS}`,
+        { status: 422 },
+      );
+    }
+
+    let failedStations = 0;
+    const detailResults = await mapWithConcurrency(
+      areaStations,
+      CONNECTED_DETAIL_CONCURRENCY,
+      async (station) => {
+        try {
+          return { station, details: await loadStationDetails(station.id) };
+        } catch (error) {
+          failedStations += 1;
+          console.warn(`[charge-nearby] Skipping connected overview details for ${station.id}: ${error.message}`);
+          return null;
+        }
+      },
+    );
+    const now = Date.now();
+    const connected = detailResults
+      .filter(Boolean)
+      .flatMap(({ station, details }) => details.chargePoints
+        .filter((chargePoint) => CONNECTED_STATES.has(String(chargePoint.status).toUpperCase()))
+        .map((chargePoint) => {
+          const updatedAtMs = Date.parse(chargePoint.updatedAt);
+          if (!Number.isFinite(updatedAtMs)) return null;
+          return {
+            stationId: station.id,
+            address: station.address,
+            operator: station.operator,
+            position: station.position,
+            distance: Math.round(haversineMetres([lat, lon], station.position)),
+            chargePointId: chargePoint.id,
+            status: chargePoint.status,
+            updatedAt: chargePoint.updatedAt,
+            connectedForSeconds: Math.max(0, Math.floor((now - updatedAtMs) / 1000)),
+            plugs: chargePoint.plugs,
+          };
+        }))
+      .filter(Boolean)
+      .sort((a, b) => b.connectedForSeconds - a.connectedForSeconds || a.distance - b.distance);
+
+    return {
+      generatedAt: new Date(now).toISOString(),
+      stationsScanned: areaStations.length,
+      failedStations,
+      connected,
+    };
+  }
+
   async function handleApi(request, response, url) {
     if (url.pathname === "/api/health") {
       jsonResponse(response, apiKey ? 200 : 503, {
@@ -252,6 +329,28 @@ export function createChargeNearbyServer({
         jsonResponse(response, 503, { error: "ENBW_API_KEY is not configured" });
         return;
       }
+      if (url.searchParams.get("mode") === "overview") {
+        const lat = Number(url.searchParams.get("lat"));
+        const lon = Number(url.searchParams.get("lon"));
+        const radius = Number(url.searchParams.get("radius"));
+        if (![lat, lon, radius].every(Number.isFinite) || !ALLOWED_RADII.has(radius)) {
+          jsonResponse(response, 400, { error: "Provide valid lat, lon and radius (250, 500, 1000 or 2000)" });
+          return;
+        }
+        if (!isWithinNetherlands(lat, lon)) {
+          jsonResponse(response, 400, { error: "This deployment is limited to the European Netherlands" });
+          return;
+        }
+        try {
+          jsonResponse(response, 200, await loadConnectedOverview(lat, lon, radius));
+        } catch (error) {
+          const { status, message } = publicError(error);
+          console.error(`[charge-nearby] Connected overview failed: ${error.message}`);
+          jsonResponse(response, status, { error: message });
+        }
+        return;
+      }
+
       const stationId = String(url.searchParams.get("id") || "");
       if (!/^enbw-\d{1,20}$/.test(stationId)) {
         jsonResponse(response, 400, { error: "Provide a valid station ID" });

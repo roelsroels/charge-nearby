@@ -26,6 +26,8 @@ test("page exposes the charging search", () => {
   assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.1\.2<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
+  assert.match(html, /class="connected-overview-button"/);
+  assert.match(html, /id="connected-overview-dialog"/);
   assert.match(html, /property="og:image" content="og\.png"/);
   assert.match(html, /href="vendor\/leaflet\/leaflet\.css\?v=1\.9\.4"/);
   assert.match(html, /src="vendor\/leaflet\/leaflet\.js\?v=1\.9\.4"/);
@@ -92,6 +94,15 @@ test("occupied connector age is presented as an approximate connected duration",
   assert.match(js, /"OCCUPIED", "CHARGING", "SUSPENDED_EV", "SUSPENDED_EVSE"/);
   assert.match(js, /connected ~\$\{age/);
   assert.match(readme, /approximate time since EnBW recorded that occupied state/);
+});
+
+test("longest-connected overview is scoped to the active search circle", () => {
+  assert.match(js, /mode", "overview"/);
+  assert.match(js, /url\.searchParams\.set\("radius", String\(activeRadius\)\)/);
+  assert.match(js, /connected\.slice\(0, 20\)/);
+  assert.match(js, /longest first/);
+  assert.match(css, /\.connected-dialog/);
+  assert.match(css, /\.connected-ranking-item/);
 });
 
 test("stations omitted by a later response remain visibly unavailable", () => {

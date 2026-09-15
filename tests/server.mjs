@@ -114,6 +114,46 @@ test("connector details are on demand, cached, and omit tariffs", async () => {
   });
 });
 
+test("connected overview ranks occupied connectors in the searched circle", async () => {
+  const occupiedSince = Date.now() - 2 * 60 * 60 * 1000;
+  const fetchImpl = async (url) => {
+    if (String(url).endsWith("/chargestations/123456")) {
+      return new Response(JSON.stringify({
+        chargePoints: [
+          {
+            evseId: "NL*TEST*OCCUPIED",
+            state: { value: "OCCUPIED", updatedAt: occupiedSince },
+            connectors: [{ plugTypeName: "Type 2", maxPowerInKw: 11 }],
+          },
+          {
+            evseId: "NL*TEST*AVAILABLE",
+            state: { value: "AVAILABLE", updatedAt: Date.now() },
+            connectors: [{ plugTypeName: "Type 2", maxPowerInKw: 11 }],
+          },
+        ],
+      }), { status: 200 });
+    }
+    return new Response(JSON.stringify(stationPayload), { status: 200 });
+  };
+
+  await withServer({ apiKey: "test-key", fetchImpl }, async (baseUrl) => {
+    const overviewQuery = "/api/charger-details?mode=overview&lat=52.37312&lon=4.89319&radius=500";
+    const beforeSearch = await fetch(`${baseUrl}${overviewQuery}`);
+    assert.equal(beforeSearch.status, 409);
+
+    await fetch(`${baseUrl}/api/chargers?lat=52.37312&lon=4.89319&radius=500`);
+    const response = await fetch(`${baseUrl}${overviewQuery}`);
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.stationsScanned, 1);
+    assert.equal(payload.failedStations, 0);
+    assert.equal(payload.connected.length, 1);
+    assert.equal(payload.connected[0].stationId, "enbw-123456");
+    assert.equal(payload.connected[0].chargePointId, "NL*TEST*OCCUPIED");
+    assert.ok(payload.connected[0].connectedForSeconds >= 7199);
+  });
+});
+
 test("charger API rejects HEAD without starting upstream work", async () => {
   let upstreamRequests = 0;
   const fetchImpl = async () => {
