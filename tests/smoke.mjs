@@ -53,6 +53,9 @@ test("postcode and private EnBW API paths stay present", () => {
   assert.match(js, /api\/chargers/);
   assert.match(js, /api\/charger-details/);
   assert.match(js, /Show connector details/);
+  assert.match(js, /card-details-button/);
+  assert.match(js, /details\.dataset\.variant = "card"/);
+  assert.match(css, /\.card-connector-list \{ max-height: none;/);
   assert.match(js, /covers the European Netherlands/);
   assert.doesNotMatch(js, /data\/chargers\.json/);
   assert.doesNotMatch(html, /NDW\/DOT-NL/);

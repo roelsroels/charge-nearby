@@ -180,7 +180,32 @@
     directions.textContent = "Directions ↗";
     footer.append(facts, directions);
 
-    article.append(top, body, footer);
+    const detailsButton = document.createElement("button");
+    detailsButton.className = "card-details-button";
+    detailsButton.type = "button";
+    detailsButton.setAttribute("aria-expanded", "false");
+    detailsButton.textContent = "Show connector details";
+    const details = document.createElement("div");
+    details.className = "popup-details-content card-details-content";
+    details.dataset.variant = "card";
+    details.hidden = true;
+    details.setAttribute("aria-live", "polite");
+    detailsButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const expanded = detailsButton.getAttribute("aria-expanded") === "true";
+      if (expanded) {
+        details.hidden = true;
+        detailsButton.setAttribute("aria-expanded", "false");
+        detailsButton.textContent = "Show connector details";
+        return;
+      }
+      details.hidden = false;
+      detailsButton.setAttribute("aria-expanded", "true");
+      detailsButton.textContent = "Hide connector details";
+      await loadConnectorDetails(station, detailsButton, details);
+    });
+
+    article.append(top, body, footer, detailsButton, details);
     article.addEventListener("mouseenter", () => highlightStation(station.id));
     article.addEventListener("focus", () => highlightStation(station.id));
     article.addEventListener("mouseleave", clearHighlights);
@@ -304,12 +329,12 @@
     container.replaceChildren();
     if (!payload.chargePoints?.length) {
       container.textContent = "No individual connector information was supplied.";
-      container.className = "popup-details-message";
+      container.className = `popup-details-message${container.dataset.variant === "card" ? " card-details-message" : ""}`;
       return;
     }
 
     const list = document.createElement("div");
-    list.className = "popup-connector-list";
+    list.className = `popup-connector-list${container.dataset.variant === "card" ? " card-connector-list" : ""}`;
     payload.chargePoints.forEach((chargePoint) => {
       const row = document.createElement("div");
       row.className = "popup-connector";
@@ -337,7 +362,7 @@
       row.append(heading, meta);
       list.append(row);
     });
-    container.className = "popup-details-content";
+    container.className = `popup-details-content${container.dataset.variant === "card" ? " card-details-content" : ""}`;
     container.append(list);
   }
 
@@ -351,7 +376,7 @@
     button.disabled = true;
     button.textContent = "Loading connector details…";
     container.hidden = false;
-    container.className = "popup-details-message";
+    container.className = `popup-details-message${container.dataset.variant === "card" ? " card-details-message" : ""}`;
     container.textContent = "Contacting EnBW…";
     try {
       const url = new URL(CHARGER_DETAIL_API_URL, window.location.href);
