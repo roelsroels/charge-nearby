@@ -68,6 +68,9 @@ test("favorites are persistent and visually distinct", () => {
   assert.match(js, /Number\(favorites\.has\(b\.id\)\) - Number\(favorites\.has\(a\.id\)\)/);
   assert.match(js, /popup-favorite-button/);
   assert.match(css, /\.station-card\.is-favorite/);
+  assert.match(css, /\.station-grid \{ display: grid; grid-template-columns: repeat\(3,/);
+  assert.match(css, /\.station-card \{ min-height: 185px;/);
+  assert.doesNotMatch(css, /\.station-grid \{[^}]*overflow-y: auto/);
   assert.match(css, /\.charger-pin\.favorite/);
   assert.match(css, /\.popup-favorite-button/);
   assert.match(html, /Favorites appear first/);
