@@ -41,6 +41,8 @@ test("page exposes the charging search", () => {
   assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/images/marker-shadow.png", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../docs/screenshots/charge-nearby-1012-js-overview.jpg", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../docs/screenshots/charge-nearby-1012-js-results.jpg", import.meta.url)), true);
+  assert.match(readme, /on-demand connector details and approximate connected durations/);
+  assert.match(readme, /represents approximate plug-in time/);
 });
 
 test("postcode and private EnBW API paths stay present", () => {

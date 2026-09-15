@@ -10,9 +10,13 @@ The browser uses PDOK to locate the postcode. A dependency-free Node service fet
 
 ## Screenshots
 
-![Charge Nearby search and map for postcode 1012 JS](docs/screenshots/charge-nearby-1012-js-overview.jpg)
+![Charge Nearby map for postcode 1012 JS with on-demand connector details and approximate connected durations](docs/screenshots/charge-nearby-1012-js-overview.jpg)
 
-![Charge Nearby charger results for postcode 1012 JS](docs/screenshots/charge-nearby-1012-js-results.jpg)
+![Charge Nearby charger results for postcode 1012 JS with a favorite location prioritized](docs/screenshots/charge-nearby-1012-js-results.jpg)
+
+The connector panel is loaded only after selecting `Show connector details`.
+For occupied connectors, `connected ~…` is calculated from EnBW's status timestamp
+and represents approximate plug-in time, regardless of whether power is flowing.
 
 > [!IMPORTANT]
 > This is an unofficial project. It is not affiliated with or supported by EnBW. The EnBW web-map endpoint and browser key can change without notice.
