@@ -8,9 +8,10 @@ Charge Nearby now uses an on-demand local service because the EnBW endpoint reje
 4. The server queries the EnBW mobility+ station endpoint with the configured `ENBW_API_KEY` and the headers expected by that endpoint.
 5. EnBW can return grouped map markers without station IDs. The server follows each group viewport until it has individual stations, deduplicates them by EnBW station ID, and applies an exact great-circle radius filter.
 6. Only fields needed by the interface are returned: station ID, coordinates, address, operator, connector types, power, total/available/unknown counts, opening, payment and accessibility indicators.
-7. Successful searches are cached in memory for 60 seconds. A larger-radius cached search can satisfy a smaller-radius request around the same centre. Cached data up to 15 minutes old is used as a fallback during temporary EnBW failures.
-8. Successfully returned stations are remembered for 30 days. If a later successful response omits a remembered station inside the requested radius, the server returns its last-known location as `No current data`; the interface renders it in gray. The Docker image stores this catalogue in its `/data` volume.
-9. The public reverse proxy rate-limits searches per client, while the application allows at most two distinct uncached searches to run concurrently. Exact duplicate and cached requests do not consume another application slot.
+7. When a visitor selects `Show connector details`, the browser requests `/api/charger-details` for a station returned by a preceding search. The server fetches the individual EnBW station record and returns only EVSE ID, status, status update time, accessibility, plug type, power and cable information. Pricing and tariff objects are discarded.
+8. Successful searches and connector-detail requests are cached in memory for 60 seconds. A larger-radius cached search can satisfy a smaller-radius request around the same centre. Cached search data up to 15 minutes old is used as a fallback during temporary EnBW failures.
+9. Successfully returned stations are remembered for 30 days. If a later successful response omits a remembered station inside the requested radius, the server returns its last-known location as `No current data`; the interface renders it in gray. The Docker image stores this catalogue in its `/data` volume.
+10. The public reverse proxy rate-limits searches and connector-detail requests per client, while the application allows at most two distinct uncached searches to run concurrently. Exact duplicate and cached searches do not consume another application slot.
 
 ## Security and privacy
 
@@ -18,7 +19,7 @@ Charge Nearby now uses an on-demand local service because the EnBW endpoint reje
 - `.env` is ignored by Git.
 - Docker publishes the service only on host loopback. The Node process listens on all interfaces inside the isolated container so nginx can reach the published loopback port.
 - The application has no login screen or built-in access control.
-- `/api/chargers` remains public because the browser needs it; nginx applies per-IP request and connection limits. `/api/health` is restricted to trusted addresses and other `/api/` paths fail closed.
+- `/api/chargers` and `/api/charger-details` remain public because the browser needs them; nginx applies per-IP request and connection limits. Connector details can only be requested for a station previously returned by this process. `/api/health` is restricted to trusted addresses and other `/api/` paths fail closed.
 - New uncached searches are rejected with a short-lived `503` response when the application-wide work limit is full, preventing an unbounded queue of EnBW requests.
 - Static content uses a restrictive Content Security Policy and cannot be framed. Leaflet is self-hosted rather than executed from a public CDN.
 - The persisted station catalogue contains public station metadata only and no searched postcodes or user identifiers.

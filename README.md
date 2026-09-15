@@ -81,11 +81,11 @@ look for `"configured":true` in the response.
 
 ## Reverse proxy
 
-The Node service must handle both the website and `/api/chargers`. Do not serve `html/` by itself. An nginx reverse-proxy example is available in `nginx/charge-nearby.conf.example`. Replace its example domain and certificate paths with your own before installing it.
+The Node service must handle the website, `/api/chargers` and `/api/charger-details`. Do not serve `html/` by itself. An nginx reverse-proxy example is available in `nginx/charge-nearby.conf.example`. Replace its example domain and certificate paths with your own before installing it.
 
 Proxy to `http://127.0.0.1:8089`; do not change the Compose port binding to
 `8089:8080` for a public deployment. The browser needs public access to the website
-and `/api/chargers`, so protect that endpoint with rate and connection limits rather
+and both public API routes, so protect those endpoints with rate and connection limits rather
 than an IP allowlist. Keep operational endpoints such as `/api/health` private. The
 nginx vhost sets CSP and frame protection explicitly, with the app providing the
 same headers as a fallback.
@@ -103,6 +103,7 @@ sudo systemctl reload nginx
 - Supported radii are 250 m, 500 m, 1 km and 2 km.
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
 - Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.
+- Map popups show operator, distance, plug type, maximum power and confirmed access indicators. Individual connector status, power, cable and update time are fetched only when `Show connector details` is selected; tariff data is deliberately excluded.
 - The last successfully searched postcode is stored in the current browser and restored on the next visit.
 - Data-age labels continue updating while the page is open and refresh immediately when an idle tab becomes active again.
 - Stations seen during the previous 30 days remain visible in gray as `No current data` when a successful EnBW response temporarily omits them. The Docker image stores this last-seen catalogue in its `/data` volume without requiring extra Compose configuration.

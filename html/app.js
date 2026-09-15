@@ -4,6 +4,7 @@
   const DEFAULT_CENTRE = [52.37276, 4.89362];
   const PDOK_SEARCH_URL = "https://api.pdok.nl/kadaster/location-api/v1/search";
   const CHARGER_API_URL = "api/chargers";
+  const CHARGER_DETAIL_API_URL = "api/charger-details";
   const FAVORITES_STORAGE_KEY = "charge-nearby:favorites:v1";
   const LAST_POSTCODE_STORAGE_KEY = "charge-nearby:last-postcode:v1";
 
@@ -19,6 +20,7 @@
   let dataAgeTimer = null;
   let searchRequestId = 0;
   const markers = new Map();
+  const connectorDetails = new Map();
   const favorites = loadFavoriteIds();
 
   const byId = (id) => document.getElementById(id);
@@ -77,9 +79,10 @@
     return 2 * earthRadius * Math.asin(Math.sqrt(a));
   }
 
-  function dataAgeText() {
-    if (!dataMeta?.generatedAt) return "update time unavailable";
-    const ageSeconds = Math.max(0, Math.floor((Date.now() - new Date(dataMeta.generatedAt).getTime()) / 1000));
+  function relativeAgeText(timestamp) {
+    const parsed = new Date(timestamp).getTime();
+    if (!Number.isFinite(parsed)) return null;
+    const ageSeconds = Math.max(0, Math.floor((Date.now() - parsed) / 1000));
     if (ageSeconds < 60) return "updated just now";
     const minutes = Math.floor(ageSeconds / 60);
     if (minutes < 60) return `updated ${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
@@ -87,6 +90,10 @@
     if (hours < 24) return `updated ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
     const days = Math.floor(hours / 24);
     return `updated ${days} ${days === 1 ? "day" : "days"} ago`;
+  }
+
+  function dataAgeText() {
+    return relativeAgeText(dataMeta?.generatedAt) || "update time unavailable";
   }
 
   function updateDataBadge() {
@@ -255,12 +262,130 @@
     return `${favorites.has(station.id) ? "Favorite · " : ""}${station.address}: ${availabilityState(station).text}`;
   }
 
+  function stationFacts(station) {
+    const facts = [];
+    const connectorNames = [...new Set((station.connectorNames || []).filter(Boolean))];
+    if (connectorNames.length) facts.push(connectorNames.join(", "));
+    if (station.powerKw) facts.push(`Up to ${Math.round(station.powerKw)} kW`);
+    if (station.alwaysOpen === true) facts.push("Open 24/7");
+    if (station.payment === true) facts.push("Payment supported");
+    if (station.accessible === true) facts.push("Accessible");
+    if (station.unknown > 0) facts.push(`${station.unknown} ${station.unknown === 1 ? "status" : "statuses"} unknown`);
+    return facts;
+  }
+
+  function connectorStatus(status) {
+    const normalized = String(status || "UNKNOWN").toUpperCase();
+    const labels = {
+      AVAILABLE: "Available",
+      OCCUPIED: "Occupied",
+      OUT_OF_SERVICE: "Out of service",
+      RESERVED: "Reserved",
+      UNKNOWN: "Unknown"
+    };
+    return { value: normalized, label: labels[normalized] || normalized.replaceAll("_", " ").toLowerCase() };
+  }
+
+  function renderConnectorDetails(container, payload) {
+    container.replaceChildren();
+    if (!payload.chargePoints?.length) {
+      container.textContent = "No individual connector information was supplied.";
+      container.className = "popup-details-message";
+      return;
+    }
+
+    const list = document.createElement("div");
+    list.className = "popup-connector-list";
+    payload.chargePoints.forEach((chargePoint) => {
+      const row = document.createElement("div");
+      row.className = "popup-connector";
+      const heading = document.createElement("div");
+      heading.className = "popup-connector-heading";
+      const id = document.createElement("span");
+      id.textContent = chargePoint.label || chargePoint.id;
+      id.title = chargePoint.id;
+      const state = connectorStatus(chargePoint.status);
+      const status = document.createElement("strong");
+      const statusClass = state.value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      status.className = `popup-connector-status is-${statusClass}`;
+      status.textContent = state.label;
+      heading.append(id, status);
+
+      const descriptions = (chargePoint.plugs || []).map((plug) => {
+        const parts = [plug.name || plug.type || "Connector"];
+        if (plug.powerKw) parts.push(`${Math.round(plug.powerKw)} kW`);
+        if (plug.cableAttached === true) parts.push("cable attached");
+        return parts.join(" · ");
+      });
+      const meta = document.createElement("small");
+      const updated = relativeAgeText(chargePoint.updatedAt);
+      meta.textContent = [descriptions.join(" / "), updated].filter(Boolean).join(" · ");
+      row.append(heading, meta);
+      list.append(row);
+    });
+    container.className = "popup-details-content";
+    container.append(list);
+  }
+
+  async function loadConnectorDetails(station, button, container) {
+    const cached = connectorDetails.get(station.id);
+    const cachedAt = cached?.generatedAt ? new Date(cached.generatedAt).getTime() : 0;
+    if (cached && Date.now() - cachedAt < 60000) {
+      renderConnectorDetails(container, cached);
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Loading connector details…";
+    container.hidden = false;
+    container.className = "popup-details-message";
+    container.textContent = "Contacting EnBW…";
+    try {
+      const url = new URL(CHARGER_DETAIL_API_URL, window.location.href);
+      url.searchParams.set("id", station.id);
+      const response = await fetch(url, { cache: "no-store", headers: { Accept: "application/json" } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || `Charging service returned ${response.status}`);
+      if (!Array.isArray(payload.chargePoints)) throw new Error("Invalid connector response");
+      connectorDetails.set(station.id, payload);
+      renderConnectorDetails(container, payload);
+      button.textContent = "Hide connector details";
+    } catch (error) {
+      container.textContent = `Connector details unavailable: ${error.message}`;
+      button.textContent = "Try connector details again";
+    } finally {
+      button.disabled = false;
+      markers.get(station.id)?.getPopup()?.update();
+    }
+  }
+
   function createPopup(station) {
     const content = document.createElement("div");
+    content.className = "charger-popup";
     const title = document.createElement("strong");
+    title.className = "popup-title";
     title.textContent = station.address || "Public charging location";
     const status = document.createElement("div");
+    status.className = "popup-availability";
     status.textContent = availabilityState(station).text;
+    const context = document.createElement("div");
+    context.className = "popup-context";
+    context.textContent = [station.operator, formatDistance(station.distance)].filter(Boolean).join(" · ");
+    const facts = document.createElement("div");
+    facts.className = "popup-facts";
+    stationFacts(station).forEach((fact) => {
+      const chip = document.createElement("span");
+      chip.textContent = fact;
+      facts.append(chip);
+    });
+    const freshness = document.createElement("div");
+    freshness.className = "popup-freshness";
+    const age = relativeAgeText(station.lastSeenAt);
+    freshness.textContent = age
+      ? `${station.current === false ? "Last seen" : "Station data"} ${age.replace(/^updated /, "")}`
+      : "Station update time unavailable";
+
+    const actions = document.createElement("div");
+    actions.className = "popup-actions";
     const favorite = document.createElement("button");
     favorite.className = "favorite-button popup-favorite-button";
     favorite.type = "button";
@@ -269,7 +394,41 @@
       event.stopPropagation();
       toggleFavorite(station);
     });
-    content.append(title, status, favorite);
+    const directions = document.createElement("a");
+    directions.className = "popup-directions";
+    directions.href = `https://www.openstreetmap.org/?mlat=${station.position[0]}&mlon=${station.position[1]}#map=18/${station.position[0]}/${station.position[1]}`;
+    directions.target = "_blank";
+    directions.rel = "noreferrer";
+    directions.textContent = "Directions ↗";
+    actions.append(favorite, directions);
+
+    const detailsButton = document.createElement("button");
+    detailsButton.className = "popup-details-button";
+    detailsButton.type = "button";
+    detailsButton.setAttribute("aria-expanded", "false");
+    detailsButton.textContent = "Show connector details";
+    const details = document.createElement("div");
+    details.className = "popup-details-content";
+    details.hidden = true;
+    details.setAttribute("aria-live", "polite");
+    detailsButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const expanded = detailsButton.getAttribute("aria-expanded") === "true";
+      if (expanded) {
+        details.hidden = true;
+        detailsButton.setAttribute("aria-expanded", "false");
+        detailsButton.textContent = "Show connector details";
+        return;
+      }
+      details.hidden = false;
+      detailsButton.setAttribute("aria-expanded", "true");
+      detailsButton.textContent = "Hide connector details";
+      await loadConnectorDetails(station, detailsButton, details);
+    });
+
+    content.append(title, status, context);
+    if (facts.childElementCount) content.append(facts);
+    content.append(freshness, actions, detailsButton, details);
     return content;
   }
 

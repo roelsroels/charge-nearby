@@ -3,7 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { EnbwApiError, fetchStationsAround, haversineMetres } from "./lib/enbw.mjs";
+import { EnbwApiError, fetchStationDetails, fetchStationsAround, haversineMetres } from "./lib/enbw.mjs";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultHtmlRoot = path.join(currentDirectory, "html");
@@ -11,7 +11,9 @@ const NETHERLANDS_BOUNDS = Object.freeze({ minLat: 50.70, maxLat: 53.60, minLon:
 const ALLOWED_RADII = new Set([250, 500, 1000, 2000]);
 const DEFAULT_HISTORY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_MAX_CONCURRENT_SEARCHES = 2;
+const DEFAULT_DETAIL_CACHE_TTL_MS = 60000;
 const MAX_REMEMBERED_STATIONS = 5000;
+const MAX_CACHED_STATION_DETAILS = 100;
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -117,11 +119,14 @@ export function createChargeNearbyServer({
   historyTtlMs = Number(process.env.STATION_HISTORY_TTL_MS) || DEFAULT_HISTORY_TTL_MS,
   historyFile = process.env.STATION_HISTORY_FILE || null,
   maxConcurrentSearches = process.env.MAX_CONCURRENT_SEARCHES,
+  detailCacheTtlMs = Number(process.env.DETAIL_CACHE_TTL_MS) || DEFAULT_DETAIL_CACHE_TTL_MS,
 } = {}) {
   const cache = new Map();
   const inFlight = new Map();
   const concurrentSearchLimit = positiveInteger(maxConcurrentSearches, DEFAULT_MAX_CONCURRENT_SEARCHES);
   const stationHistory = loadStationHistory(historyFile, historyTtlMs);
+  const stationDetailCache = new Map();
+  const stationDetailRequests = new Map();
 
   function mergeWithStationHistory(liveStations, lat, lon, radius, generatedAtMs) {
     const cutoff = generatedAtMs - historyTtlMs;
@@ -201,6 +206,36 @@ export function createChargeNearbyServer({
     return request;
   }
 
+  async function loadStationDetails(stationId) {
+    const cached = stationDetailCache.get(stationId);
+    if (cached && Date.now() - cached.generatedAtMs <= detailCacheTtlMs) {
+      return { ...cached, cache: "hit" };
+    }
+    if (stationDetailRequests.has(stationId)) return stationDetailRequests.get(stationId);
+
+    const request = (async () => {
+      try {
+        const numericStationId = stationId.replace(/^enbw-/, "");
+        const result = await fetchStationDetails({ stationId: numericStationId, apiKey, fetchImpl });
+        const generatedAtMs = Date.now();
+        const entry = {
+          ...result,
+          generatedAt: new Date(generatedAtMs).toISOString(),
+          generatedAtMs,
+        };
+        stationDetailCache.set(stationId, entry);
+        if (stationDetailCache.size > MAX_CACHED_STATION_DETAILS) {
+          stationDetailCache.delete(stationDetailCache.keys().next().value);
+        }
+        return { ...entry, cache: "miss" };
+      } finally {
+        stationDetailRequests.delete(stationId);
+      }
+    })();
+    stationDetailRequests.set(stationId, request);
+    return request;
+  }
+
   async function handleApi(request, response, url) {
     if (url.pathname === "/api/health") {
       jsonResponse(response, apiKey ? 200 : 503, {
@@ -210,6 +245,35 @@ export function createChargeNearbyServer({
         cachedSearches: cache.size,
         rememberedStations: stationHistory.size,
       });
+      return;
+    }
+    if (url.pathname === "/api/charger-details") {
+      if (!apiKey) {
+        jsonResponse(response, 503, { error: "ENBW_API_KEY is not configured" });
+        return;
+      }
+      const stationId = String(url.searchParams.get("id") || "");
+      if (!/^enbw-\d{1,20}$/.test(stationId)) {
+        jsonResponse(response, 400, { error: "Provide a valid station ID" });
+        return;
+      }
+      if (!stationHistory.has(stationId)) {
+        jsonResponse(response, 404, { error: "Search for this station before requesting details" });
+        return;
+      }
+      try {
+        const result = await loadStationDetails(stationId);
+        jsonResponse(response, 200, {
+          stationId: result.stationId,
+          generatedAt: result.generatedAt,
+          cache: result.cache,
+          chargePoints: result.chargePoints,
+        });
+      } catch (error) {
+        const { status, message } = publicError(error);
+        console.error(`[charge-nearby] EnBW station detail failed for ${stationId}: ${error.message}`);
+        jsonResponse(response, status, { error: message });
+      }
       return;
     }
     if (url.pathname !== "/api/chargers") {

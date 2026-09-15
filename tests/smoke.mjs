@@ -45,6 +45,8 @@ test("page exposes the charging search", () => {
 test("postcode and private EnBW API paths stay present", () => {
   assert.match(js, /api\.pdok\.nl\/kadaster\/location-api/);
   assert.match(js, /api\/chargers/);
+  assert.match(js, /api\/charger-details/);
+  assert.match(js, /Show connector details/);
   assert.match(js, /covers the European Netherlands/);
   assert.doesNotMatch(js, /data\/chargers\.json/);
   assert.doesNotMatch(html, /NDW\/DOT-NL/);
@@ -109,6 +111,7 @@ test("responsive and reduced-motion rules are present", () => {
 test("nginx example constrains the public API and browser capabilities", () => {
   assert.match(nginx, /limit_req_zone \$binary_remote_addr zone=charge_nearby_api:10m rate=12r\/m/);
   assert.match(nginx, /location = \/api\/chargers/);
+  assert.match(nginx, /location = \/api\/charger-details/);
   assert.match(nginx, /limit_req zone=charge_nearby_api burst=4 nodelay/);
   assert.match(nginx, /limit_conn charge_nearby_api_connections 2/);
   assert.match(nginx, /location = \/api\/health/);

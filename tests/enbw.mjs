@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { boundsForRadius, fetchStationsAround, haversineMetres } from "../lib/enbw.mjs";
+import { boundsForRadius, fetchStationDetails, fetchStationsAround, haversineMetres } from "../lib/enbw.mjs";
 
 const centre = [52.37312, 4.89319];
 
@@ -102,5 +102,49 @@ test("authentication failures become a service error without leaking the key", a
   await assert.rejects(
     fetchStationsAround({ lat: centre[0], lon: centre[1], radiusM: 250, apiKey: "test-key", fetchImpl }),
     (error) => error.name === "EnbwAuthError" && !error.message.includes("test-key"),
+  );
+});
+
+test("station details expose connector status without tariff data", async () => {
+  const fetchImpl = async (url, options) => {
+    assert.match(String(url), /\/chargestations\/123456$/);
+    assert.equal(options.headers["Ocp-Apim-Subscription-Key"], "test-key");
+    return new Response(JSON.stringify({
+      stationId: 123456,
+      chargePoints: [{
+        evseId: "NL*TEST*E1",
+        status: "OCCUPIED",
+        state: { value: "OCCUPIED", updatedAt: 1789390259218 },
+        handicappedAccessible: true,
+        connectors: [{
+          chargePlugTypeGroup: "TYPE_2",
+          plugTypeName: "Type 2",
+          maxPowerInKw: 22,
+          cableAttached: false,
+          tariffInfo: { tariffDescription: "Must not leave the server" },
+        }],
+      }],
+      tariffInformations: [{ price: "Must not leave the server" }],
+    }), { status: 200 });
+  };
+
+  const result = await fetchStationDetails({ stationId: "123456", apiKey: "test-key", fetchImpl });
+  assert.equal(result.stationId, "enbw-123456");
+  assert.deepEqual(result.chargePoints[0], {
+    id: "NL*TEST*E1",
+    label: null,
+    status: "OCCUPIED",
+    updatedAt: "2026-09-14T12:50:59.218Z",
+    accessible: true,
+    plugs: [{ type: "TYPE_2", name: "Type 2", powerKw: 22, cableAttached: false }],
+  });
+  assert.equal(JSON.stringify(result).includes("tariff"), false);
+  assert.equal(JSON.stringify(result).includes("Must not leave"), false);
+});
+
+test("station details reject IDs that could alter the upstream path", async () => {
+  await assert.rejects(
+    fetchStationDetails({ stationId: "../chargestations", apiKey: "test-key" }),
+    (error) => error.status === 400,
   );
 });

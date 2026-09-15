@@ -67,6 +67,53 @@ test("charger endpoint caches successful EnBW searches", async () => {
   });
 });
 
+test("connector details are on demand, cached, and omit tariffs", async () => {
+  let listRequests = 0;
+  let detailRequests = 0;
+  const fetchImpl = async (url) => {
+    if (String(url).endsWith("/chargestations/123456")) {
+      detailRequests += 1;
+      return new Response(JSON.stringify({
+        chargePoints: [{
+          evseId: "NL*TEST*E1",
+          status: "AVAILABLE",
+          state: { value: "AVAILABLE", updatedAt: 1789390259218 },
+          connectors: [{
+            chargePlugTypeGroup: "TYPE_2",
+            plugTypeName: "Type 2",
+            maxPowerInKw: 11,
+            cableAttached: false,
+            tariffInfo: { tariffDescription: "Excluded" },
+          }],
+        }],
+        tariffInformations: [{ description: "Excluded" }],
+      }), { status: 200 });
+    }
+    listRequests += 1;
+    return new Response(JSON.stringify(stationPayload), { status: 200 });
+  };
+
+  await withServer({ apiKey: "test-key", fetchImpl, detailCacheTtlMs: 60000 }, async (baseUrl) => {
+    const beforeSearch = await fetch(`${baseUrl}/api/charger-details?id=enbw-123456`);
+    assert.equal(beforeSearch.status, 404);
+    assert.equal(detailRequests, 0);
+
+    await fetch(`${baseUrl}/api/chargers?lat=52.37312&lon=4.89319&radius=500`);
+    assert.equal(listRequests, 1);
+
+    const first = await fetch(`${baseUrl}/api/charger-details?id=enbw-123456`);
+    const firstPayload = await first.json();
+    assert.equal(first.status, 200);
+    assert.equal(firstPayload.cache, "miss");
+    assert.equal(firstPayload.chargePoints[0].status, "AVAILABLE");
+    assert.equal(JSON.stringify(firstPayload).includes("tariff"), false);
+
+    const second = await fetch(`${baseUrl}/api/charger-details?id=enbw-123456`);
+    assert.equal((await second.json()).cache, "hit");
+    assert.equal(detailRequests, 1);
+  });
+});
+
 test("charger API rejects HEAD without starting upstream work", async () => {
   let upstreamRequests = 0;
   const fetchImpl = async () => {

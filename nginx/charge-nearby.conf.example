@@ -63,6 +63,24 @@ server {
         proxy_send_timeout 30s;
     }
 
+    # Connector status is fetched only when a visitor opens the detail section.
+    location = /api/charger-details {
+        limit_req zone=charge_nearby_api burst=4 nodelay;
+        limit_req_status 429;
+        limit_conn charge_nearby_api_connections 2;
+        limit_conn_status 429;
+
+        proxy_pass http://127.0.0.1:8089;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 30s;
+        proxy_send_timeout 30s;
+    }
+
     # Operational details are useful locally but are not needed by the site.
     location = /api/health {
         allow 127.0.0.1;
