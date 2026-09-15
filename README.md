@@ -4,7 +4,7 @@
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
-Current release: **v1.1.1**
+Current release: **v1.1.2**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
@@ -88,11 +88,11 @@ look for `"configured":true` in the response.
 The Node service must handle the website, `/api/chargers` and `/api/charger-details`. Do not serve `html/` by itself. An nginx reverse-proxy example is available in `nginx/charge-nearby.conf.example`. Replace its example domain and certificate paths with your own before installing it.
 
 > [!IMPORTANT]
-> **Existing nginx installations upgrading to v1.1.1 must add the exact
+> **Existing nginx installations upgrading to v1.1.1 or later must add the exact
 > `location = /api/charger-details` block from the example vhost.** The connector
 > button is part of the public frontend and cannot call the Docker service directly.
 > If this location is missing, the fail-closed `location ^~ /api/` block returns an
-> nginx HTML `404 Not Found`, even though the v1.1.1 application and EnBW key are
+> nginx HTML `404 Not Found`, even though the application and EnBW key are
 > working correctly. This nginx-only change does not require recreating Docker.
 
 Proxy to `http://127.0.0.1:8089`; do not change the Compose port binding to

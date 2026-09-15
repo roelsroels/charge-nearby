@@ -18,12 +18,12 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.1\.1/);
-  assert.match(html, /styles\.css\?v=1\.1\.1/);
+  assert.match(html, /app\.js\?v=1\.1\.2/);
+  assert.match(html, /styles\.css\?v=1\.1\.2/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.1\.1<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.1\.2<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /property="og:image" content="og\.png"/);
@@ -134,6 +134,6 @@ test("nginx example constrains the public API and browser capabilities", () => {
   assert.match(nginx, /add_header Cross-Origin-Opener-Policy "same-origin" always;/);
   assert.match(nginx, /add_header Cross-Origin-Resource-Policy "same-origin" always;/);
   assert.match(nginx, /return 301 https:\/\/\$host\$request_uri/);
-  assert.match(readme, /Existing nginx installations upgrading to v1\.1\.1 must add/);
+  assert.match(readme, /Existing nginx installations upgrading to v1\.1\.1 or later must add/);
   assert.match(readme, /HTML 404 page headed `nginx`/);
 });
