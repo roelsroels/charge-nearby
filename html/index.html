@@ -17,9 +17,9 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://tile.openstreetmap.org">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=1.1.3.2">
+  <link rel="stylesheet" href="styles.css?v=1.1.3.3">
   <script src="vendor/leaflet/leaflet.js?v=1.9.4" defer></script>
-  <script src="app.js?v=1.1.3.1" defer></script>
+  <script src="app.js?v=1.1.3.2" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#results">Skip to results</a>
@@ -44,7 +44,7 @@
       <div>
         <h1 id="page-title">Available charger, <em>closeby</em></h1>
       </div>
-      <p class="intro-copy">Enter a postcode and see which public charging points are available right now—sorted by distance, not guesswork.</p>
+      <p class="intro-copy">Enter a NL postcode and see which public charging points are available right now—sorted by distance, not guesswork.</p>
     </section>
 
     <section class="finder" aria-label="Charging station finder">
@@ -80,11 +80,40 @@
           </div>
         </fieldset>
 
+        <div class="charger-filters" role="group" aria-label="Charger filters">
+          <label for="connector-filter">
+            <span>Connector</span>
+            <select id="connector-filter" name="connector-filter">
+              <option value="all">All connectors</option>
+              <option value="ac">AC charging</option>
+              <option value="dc">DC fast charging</option>
+              <option value="type2">Type 2</option>
+              <option value="ccs">CCS</option>
+              <option value="chademo">CHAdeMO</option>
+            </select>
+          </label>
+          <label for="speed-filter">
+            <span>Charging speed</span>
+            <select id="speed-filter" name="speed-filter">
+              <option value="0">Any speed</option>
+              <option value="11">11 kW or faster</option>
+              <option value="22">22 kW or faster</option>
+              <option value="50">50 kW or faster</option>
+              <option value="150">150 kW or faster</option>
+            </select>
+          </label>
+        </div>
+
         <div class="status-key" aria-label="Availability legend">
           <span><i class="available-dot"></i> Available</span>
           <span><i class="busy-dot"></i> Occupied</span>
           <span><i class="unknown-dot"></i> Unknown</span>
           <span><i class="unavailable-dot"></i> No current data</span>
+        </div>
+        <div class="charger-profile-key" aria-label="Map charger type legend">
+          <span><i class="profile-ac">AC</i> Regular</span>
+          <span><i class="profile-dc">DC</i> Fast</span>
+          <span><i class="profile-hpc">HPC</i> 150+ kW</span>
         </div>
       </form>
 
