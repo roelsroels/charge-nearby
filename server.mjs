@@ -16,6 +16,8 @@ const MAX_REMEMBERED_STATIONS = 5000;
 const MAX_CACHED_STATION_DETAILS = 100;
 const MAX_CONNECTED_OVERVIEW_STATIONS = 40;
 const CONNECTED_DETAIL_CONCURRENCY = 3;
+const CONNECTOR_FILTERS = new Set(["all", "ac", "dc", "type2", "ccs", "chademo"]);
+const MIN_POWER_FILTERS = new Set([0, 11, 22, 50, 150]);
 const CONNECTED_STATES = new Set(["OCCUPIED", "CHARGING", "SUSPENDED_EV", "SUSPENDED_EVSE"]);
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -253,13 +255,26 @@ export function createChargeNearbyServer({
     return request;
   }
 
-  async function loadConnectedOverview(lat, lon, radius) {
+  function stationMatchesOverviewFilter(station, connector, minPower) {
+    const text = [...(station.connectors || []), ...(station.connectorNames || [])]
+      .filter(Boolean).map((value) => String(value).toUpperCase()).join(" ");
+    const typeMatches = connector === "all"
+      || (connector === "type2" && /TYPE[_ -]?2|MENNEKES/.test(text))
+      || (connector === "ccs" && /CCS|COMBO/.test(text))
+      || (connector === "chademo" && /CHADEMO/.test(text))
+      || (connector === "dc" && /CCS|COMBO|CHADEMO|GB.?T.?DC|(^|[^A-Z])DC([^A-Z]|$)/.test(text))
+      || (connector === "ac" && /TYPE[_ -]?[12]|MENNEKES|SCHUKO|CEE|(^|[^A-Z])AC([^A-Z]|$)/.test(text));
+    return typeMatches && (!minPower || Number(station.powerKw) >= minPower);
+  }
+
+  async function loadConnectedOverview(lat, lon, radius, connector = "all", minPower = 0) {
     const searchedArea = findCached(lat, lon, radius, staleTtlMs);
     if (!searchedArea) {
       throw new EnbwApiError("Run the charger search again before loading this overview", { status: 409 });
     }
     const areaStations = filterStations(searchedArea.stations, lat, lon, radius)
-      .filter((station) => station.current !== false);
+      .filter((station) => station.current !== false)
+      .filter((station) => stationMatchesOverviewFilter(station, connector, minPower));
     if (areaStations.length > MAX_CONNECTED_OVERVIEW_STATIONS) {
       throw new EnbwApiError(
         `This circle contains ${areaStations.length} stations; choose a smaller radius to scan at most ${MAX_CONNECTED_OVERVIEW_STATIONS}`,
@@ -333,8 +348,14 @@ export function createChargeNearbyServer({
         const lat = Number(url.searchParams.get("lat"));
         const lon = Number(url.searchParams.get("lon"));
         const radius = Number(url.searchParams.get("radius"));
+        const connector = String(url.searchParams.get("connector") || "all").toLowerCase();
+        const minPower = Number(url.searchParams.get("minPower") || 0);
         if (![lat, lon, radius].every(Number.isFinite) || !ALLOWED_RADII.has(radius)) {
           jsonResponse(response, 400, { error: "Provide valid lat, lon and radius (250, 500, 1000 or 2000)" });
+          return;
+        }
+        if (!CONNECTOR_FILTERS.has(connector) || !MIN_POWER_FILTERS.has(minPower)) {
+          jsonResponse(response, 400, { error: "Provide a valid connector and minimum power filter" });
           return;
         }
         if (!isWithinNetherlands(lat, lon)) {
@@ -342,7 +363,7 @@ export function createChargeNearbyServer({
           return;
         }
         try {
-          jsonResponse(response, 200, await loadConnectedOverview(lat, lon, radius));
+          jsonResponse(response, 200, await loadConnectedOverview(lat, lon, radius, connector, minPower));
         } catch (error) {
           const { status, message } = publicError(error);
           console.error(`[charge-nearby] Connected overview failed: ${error.message}`);

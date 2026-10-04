@@ -132,6 +132,7 @@ example, then validate and reload nginx again.
 
 - Searches are available throughout the European Netherlands. A geographic boundary prevents the private EnBW proxy from being used for arbitrary worldwide coordinates.
 - Supported radii are 250 m, 500 m, 1 km and 2 km.
+- The map, availability total, charger list and longest-connected overview can be filtered by connector family (`AC`, `DC fast`, `Type 2`, `CCS` or `CHAdeMO`) and minimum charging speed. Map markers retain their availability color and add a separate `AC`, blue `DC`, or purple `HPC` (150+ kW) badge. Speed filtering uses each station's maximum advertised power; connector-detail rows use the individual plug power supplied by EnBW.
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
 - Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.
 - Map popups and charger cards show operator, distance, plug type and maximum power. Individual connector status, power, cable and update time can be loaded on demand from either view with `Show connector details`. For an occupied connector, the interface shows the approximate time since EnBW recorded that occupied state as `connected ~…`; this indicates how long the car appears to have been plugged in, not whether power is flowing. Tariff data is deliberately excluded.

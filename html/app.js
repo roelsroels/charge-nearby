@@ -14,6 +14,8 @@
   let centreMarker;
   let searchCentre = DEFAULT_CENTRE;
   let activeRadius = Number(document.querySelector('input[name="radius"]:checked')?.value) || 250;
+  let activeConnectorFilter = document.getElementById("connector-filter")?.value || "all";
+  let activeMinPower = Number(document.getElementById("speed-filter")?.value) || 0;
   let stations = [];
   let dataMeta = null;
   let activePostcode = null;
@@ -268,15 +270,59 @@
   function pinIcon(station) {
     const state = station.current === false ? " unavailable" : !station.known ? " unknown" : station.available === 0 ? " busy" : "";
     const favorite = favorites.has(station.id) ? " favorite" : "";
+    const profile = chargingProfile(station);
     const label = station.known && station.total ? `${station.available}/${station.total}` : "?";
     const favoriteBadge = favorite ? '<i aria-hidden="true">♥</i>' : "";
-    return L.divIcon({ className: `charger-pin${state}${favorite}`, html: `<span>${label}</span>${favoriteBadge}` });
+    const profileBadge = `<b aria-hidden="true">${profile.label}</b>`;
+    return L.divIcon({ className: `charger-pin${state}${favorite} speed-${profile.kind}`, html: `<span>${label}</span>${favoriteBadge}${profileBadge}` });
+  }
+
+  function connectorText(values) {
+    return (values || []).filter(Boolean).map((value) => String(value).toUpperCase()).join(" ");
+  }
+
+  function matchesConnector(values, filter = activeConnectorFilter) {
+    if (filter === "all") return true;
+    const text = connectorText(values);
+    if (!text) return false;
+    if (filter === "type2") return /TYPE[_ -]?2|MENNEKES/.test(text);
+    if (filter === "ccs") return /CCS|COMBO/.test(text);
+    if (filter === "chademo") return /CHADEMO/.test(text);
+    const dc = /CCS|COMBO|CHADEMO|GB.?T.?DC|(^|[^A-Z])DC([^A-Z]|$)/.test(text);
+    if (filter === "dc") return dc;
+    if (filter === "ac") return /TYPE[_ -]?[12]|MENNEKES|SCHUKO|CEE|(^|[^A-Z])AC([^A-Z]|$)/.test(text);
+    return true;
+  }
+
+  function stationMatchesFilters(station) {
+    const connectors = [...(station.connectors || []), ...(station.connectorNames || [])];
+    return matchesConnector(connectors) && (!activeMinPower || Number(station.powerKw) >= activeMinPower);
+  }
+
+  function chargingProfile(station) {
+    const connectors = [...(station.connectors || []), ...(station.connectorNames || [])];
+    if (matchesConnector(connectors, "dc")) {
+      return Number(station.powerKw) >= 150
+        ? { kind: "hpc", label: "HPC", description: "DC high-power charging" }
+        : { kind: "dc", label: "DC", description: "DC fast charging" };
+    }
+    if (matchesConnector(connectors, "ac")) return { kind: "ac", label: "AC", description: "AC charging" };
+    return { kind: "other", label: "?", description: "Connector type unknown" };
+  }
+
+  function connectedItemMatchesFilters(item) {
+    if (!Array.isArray(item.plugs) || !item.plugs.length) {
+      return activeConnectorFilter === "all" && activeMinPower === 0;
+    }
+    return item.plugs.some((plug) => matchesConnector([plug.type, plug.name])
+      && (!activeMinPower || Number(plug.powerKw) >= activeMinPower));
   }
 
   function visibleStations() {
     return stations
       .map((station) => ({ ...station, distance: haversineMetres(searchCentre, station.position) }))
       .filter((station) => station.distance <= activeRadius)
+      .filter(stationMatchesFilters)
       .sort((a, b) => Number(favorites.has(b.id)) - Number(favorites.has(a.id))
         || Number(b.current !== false) - Number(a.current !== false)
         || a.distance - b.distance
@@ -284,7 +330,9 @@
   }
 
   function markerTitle(station) {
-    return `${favorites.has(station.id) ? "Favorite · " : ""}${station.address}: ${availabilityState(station).text}`;
+    const profile = chargingProfile(station);
+    const power = station.powerKw ? ` · up to ${Math.round(station.powerKw)} kW` : "";
+    return `${favorites.has(station.id) ? "Favorite · " : ""}${station.address}: ${availabilityState(station).text} · ${profile.description}${power}`;
   }
 
   function stationFacts(station) {
@@ -400,10 +448,10 @@
   function renderConnectedOverview(payload) {
     const container = byId("connected-overview-content");
     container.replaceChildren();
-    const connected = Array.isArray(payload.connected) ? payload.connected : [];
+    const connected = Array.isArray(payload.connected) ? payload.connected.filter(connectedItemMatchesFilters) : [];
     if (!connected.length) {
       container.className = "connected-overview-content connected-overview-message";
-      container.textContent = "No occupied connectors with a usable status timestamp were found in this circle.";
+      container.textContent = "No occupied connectors matching these filters have a usable status timestamp.";
       return;
     }
 
@@ -411,7 +459,7 @@
     const summary = document.createElement("p");
     summary.className = "connected-overview-summary";
     const failureNote = payload.failedStations ? ` · ${payload.failedStations} unavailable` : "";
-    summary.textContent = `${connected.length} connected across ${payload.stationsScanned} scanned locations${failureNote} · longest first`;
+    summary.textContent = `${connected.length} matching connectors across ${payload.stationsScanned} scanned locations${failureNote} · longest first`;
     const ranking = document.createElement("div");
     ranking.className = "connected-ranking";
     connected.slice(0, 20).forEach((item, index) => {
@@ -458,6 +506,8 @@
       url.searchParams.set("lat", String(searchCentre[0]));
       url.searchParams.set("lon", String(searchCentre[1]));
       url.searchParams.set("radius", String(activeRadius));
+      url.searchParams.set("connector", activeConnectorFilter);
+      url.searchParams.set("minPower", String(activeMinPower));
       const response = await fetch(url, { cache: "no-store", headers: { Accept: "application/json" } });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || `Charging service returned ${response.status}`);
@@ -550,7 +600,10 @@
     if (visible.length) {
       visible.forEach((station) => list.append(stationCard(station)));
     } else {
-      list.innerHTML = `<div class="empty-state"><h3>No public chargers found this close</h3><p>Try increasing the search radius.</p></div>`;
+      const filtered = activeConnectorFilter !== "all" || activeMinPower > 0;
+      list.innerHTML = filtered
+        ? `<div class="empty-state"><h3>No chargers match these filters</h3><p>Try another connector, charging speed, or radius.</p></div>`
+        : `<div class="empty-state"><h3>No public chargers found this close</h3><p>Try increasing the search radius.</p></div>`;
     }
 
     byId("available-count").textContent = String(available);
@@ -583,6 +636,9 @@
     input.disabled = loading;
     document.querySelectorAll('input[name="radius"]').forEach((radiusInput) => {
       radiusInput.disabled = loading;
+    });
+    document.querySelectorAll(".charger-filters select").forEach((select) => {
+      select.disabled = loading;
     });
     label.textContent = loading ? "Finding chargers…" : "Find chargers";
     help.dataset.state = state;
@@ -710,6 +766,16 @@
     });
   });
 
+  byId("connector-filter").addEventListener("change", (event) => {
+    activeConnectorFilter = event.currentTarget.value;
+    render();
+  });
+
+  byId("speed-filter").addEventListener("change", (event) => {
+    activeMinPower = Number(event.currentTarget.value) || 0;
+    render();
+  });
+
   byId("charger-search").addEventListener("submit", (event) => {
     event.preventDefault();
     searchPostcode(byId("postcode").value);
@@ -724,8 +790,23 @@
   });
 
   document.querySelector(".connected-overview-button").addEventListener("click", openConnectedOverview);
+  const connectedDialog = byId("connected-overview-dialog");
   document.querySelector(".connected-dialog-close").addEventListener("click", () => {
-    byId("connected-overview-dialog").close();
+    connectedDialog.close();
+  });
+  connectedDialog.addEventListener("click", (event) => {
+    if (event.target === connectedDialog) connectedDialog.close();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (connectedDialog.open) connectedDialog.close();
+    map?.closePopup();
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!map || event.target.closest(".leaflet-popup, .leaflet-marker-icon")) return;
+    map.closePopup();
   });
 
   document.addEventListener("visibilitychange", () => {

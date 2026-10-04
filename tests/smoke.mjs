@@ -26,6 +26,14 @@ test("page exposes the charging search", () => {
   assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.1\.3<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
+  assert.match(html, /id="connector-filter"/);
+  assert.match(html, /value="dc">DC fast charging/);
+  assert.match(html, /value="ccs">CCS/);
+  assert.match(html, /value="chademo">CHAdeMO/);
+  assert.match(html, /id="speed-filter"/);
+  assert.match(html, /value="150">150 kW or faster/);
+  assert.match(html, /class="charger-profile-key"/);
+  assert.match(html, /class="profile-hpc">HPC/);
   assert.match(html, /class="connected-overview-button"/);
   assert.match(html, /id="connected-overview-dialog"/);
   assert.match(html, /property="og:image" content="og\.png"/);
@@ -106,10 +114,31 @@ test("occupied connector age is presented as an approximate connected duration",
 test("longest-connected overview is scoped to the active search circle", () => {
   assert.match(js, /mode", "overview"/);
   assert.match(js, /url\.searchParams\.set\("radius", String\(activeRadius\)\)/);
+  assert.match(js, /url\.searchParams\.set\("connector", activeConnectorFilter\)/);
+  assert.match(js, /url\.searchParams\.set\("minPower", String\(activeMinPower\)\)/);
   assert.match(js, /connected\.slice\(0, 20\)/);
   assert.match(js, /longest first/);
+  assert.match(js, /connected\.filter\(connectedItemMatchesFilters\)/);
   assert.match(css, /\.connected-dialog/);
   assert.match(css, /\.connected-ranking-item/);
+  assert.match(js, /event\.target === connectedDialog/);
+  assert.match(js, /event\.key !== "Escape"/);
+  assert.match(js, /map\?\.closePopup\(\)/);
+  assert.match(js, /\.leaflet-popup, \.leaflet-marker-icon/);
+});
+
+test("connector and charging-speed filters apply to every overview", () => {
+  assert.match(js, /function matchesConnector/);
+  assert.match(js, /function stationMatchesFilters/);
+  assert.match(js, /function chargingProfile/);
+  assert.match(js, /speed-\$\{profile\.kind\}/);
+  assert.match(js, /Number\(station\.powerKw\) >= 150/);
+  assert.match(js, /filter\(stationMatchesFilters\)/);
+  assert.match(js, /activeMinPower/);
+  assert.match(js, /filter === "dc"/);
+  assert.match(readme, /filtered by connector family/);
+  assert.match(css, /\.charger-pin\.speed-dc b/);
+  assert.match(css, /\.charger-pin\.speed-hpc b/);
 });
 
 test("stations omitted by a later response remain visibly unavailable", () => {

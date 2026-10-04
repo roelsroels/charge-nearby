@@ -137,7 +137,7 @@ test("connected overview ranks occupied connectors in the searched circle", asyn
   };
 
   await withServer({ apiKey: "test-key", fetchImpl }, async (baseUrl) => {
-    const overviewQuery = "/api/charger-details?mode=overview&lat=52.37312&lon=4.89319&radius=500";
+    const overviewQuery = "/api/charger-details?mode=overview&lat=52.37312&lon=4.89319&radius=500&connector=ac&minPower=11";
     const beforeSearch = await fetch(`${baseUrl}${overviewQuery}`);
     assert.equal(beforeSearch.status, 409);
 
