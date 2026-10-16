@@ -6,6 +6,7 @@
   const CHARGER_API_URL = "api/chargers";
   const CHARGER_DETAIL_API_URL = "api/charger-details";
   const FAVORITES_STORAGE_KEY = "charge-nearby:favorites:v1";
+  const CONNECTOR_FAVORITES_STORAGE_KEY = "charge-nearby:connector-favorites:v1";
   const LAST_POSTCODE_STORAGE_KEY = "charge-nearby:last-postcode:v1";
 
   let map;
@@ -23,7 +24,9 @@
   let searchRequestId = 0;
   const markers = new Map();
   const connectorDetails = new Map();
+  const connectorDetailRequests = new Map();
   const favorites = loadFavoriteIds();
+  const connectorFavorites = loadConnectorFavorites();
 
   const byId = (id) => document.getElementById(id);
   const formatDistance = (metres) => metres < 1000 ? `${Math.round(metres)} m` : `${(metres / 1000).toFixed(1)} km`;
@@ -43,6 +46,66 @@
     } catch {
       // Favorites still work for this page view when storage is unavailable.
     }
+  }
+
+  function loadConnectorFavorites() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(CONNECTOR_FAVORITES_STORAGE_KEY) || "[]");
+      if (!Array.isArray(stored)) return new Map();
+      return new Map(stored
+        .filter((item) => item && typeof item.id === "string" && typeof item.stationId === "string")
+        .map((item) => [connectorFavoriteKey(item.stationId, item.id), {
+          id: item.id,
+          stationId: item.stationId,
+          label: typeof item.label === "string" ? item.label : item.id
+        }]));
+    } catch {
+      return new Map();
+    }
+  }
+
+  function connectorFavoriteKey(stationId, connectorId) {
+    return `${stationId}::${connectorId}`;
+  }
+
+  function saveConnectorFavorites() {
+    try {
+      localStorage.setItem(CONNECTOR_FAVORITES_STORAGE_KEY, JSON.stringify([...connectorFavorites.values()]));
+    } catch {
+      // Connector favorites still work for this page view when storage is unavailable.
+    }
+  }
+
+  function favoriteConnectorState(station) {
+    const favoriteIds = new Set([...connectorFavorites.values()]
+      .filter((item) => item.stationId === station.id)
+      .map((item) => item.id));
+    if (!favoriteIds.size) return { total: 0, available: 0, loaded: false };
+    const payload = connectorDetails.get(station.id);
+    if (!payload?.chargePoints) return { total: favoriteIds.size, available: 0, loaded: false };
+    const favoritePoints = payload.chargePoints.filter((chargePoint) => favoriteIds.has(chargePoint.id));
+    return {
+      total: favoriteIds.size,
+      available: favoritePoints.filter((chargePoint) => String(chargePoint.status).toUpperCase() === "AVAILABLE").length,
+      loaded: true
+    };
+  }
+
+  function favoriteConnectorAlert(station, variant) {
+    const alert = document.createElement("div");
+    alert.className = `favorite-connector-alert${variant === "popup" ? " is-popup" : ""}`;
+    alert.dataset.favoriteConnectorStation = station.id;
+    alert.setAttribute("role", "status");
+    updateFavoriteConnectorAlert(alert, station);
+    return alert;
+  }
+
+  function updateFavoriteConnectorAlert(alert, station) {
+    const state = favoriteConnectorState(station);
+    alert.hidden = state.available === 0;
+    alert.textContent = state.available === 1
+      ? "♥ Favorite connector available"
+      : `♥ ${state.available} favorite connectors available`;
   }
 
   function normalisePostcode(value) {
@@ -131,8 +194,9 @@
   }
 
   function stationCard(station) {
+    const favoriteConnector = favoriteConnectorState(station);
     const article = document.createElement("article");
-    article.className = `station-card${favorites.has(station.id) ? " is-favorite" : ""}${station.current === false ? " is-unavailable" : ""}`;
+    article.className = `station-card${favorites.has(station.id) ? " is-favorite" : ""}${favoriteConnector.available ? " has-available-favorite-connector" : ""}${station.current === false ? " is-unavailable" : ""}`;
     article.tabIndex = 0;
     article.dataset.stationId = station.id;
 
@@ -207,7 +271,7 @@
       await loadConnectorDetails(station, detailsButton, details);
     });
 
-    article.append(top, body, footer, detailsButton, details);
+    article.append(top, favoriteConnectorAlert(station, "card"), body, footer, detailsButton, details);
     article.addEventListener("mouseenter", () => highlightStation(station.id));
     article.addEventListener("focus", () => highlightStation(station.id));
     article.addEventListener("mouseleave", clearHighlights);
@@ -257,6 +321,32 @@
     });
   }
 
+  function refreshFavoriteConnectorPresentation(station) {
+    const state = favoriteConnectorState(station);
+    document.querySelectorAll(".station-card").forEach((card) => {
+      if (card.dataset.stationId === station.id) {
+        card.classList.toggle("has-available-favorite-connector", state.available > 0);
+      }
+    });
+    document.querySelectorAll("[data-favorite-connector-station]").forEach((alert) => {
+      if (alert.dataset.favoriteConnectorStation === station.id) updateFavoriteConnectorAlert(alert, station);
+    });
+    document.querySelectorAll(".popup-details-content, .card-details-content").forEach((container) => {
+      if (container.dataset.stationId === station.id && connectorDetails.has(station.id)) {
+        renderConnectorDetails(container, connectorDetails.get(station.id), station);
+      }
+    });
+    sortStationCards();
+    const marker = markers.get(station.id);
+    if (marker) {
+      marker.setIcon(pinIcon(station));
+      marker.options.title = markerTitle(station);
+      marker.getElement()?.setAttribute("title", marker.options.title);
+      const popupAlert = marker.getPopup()?.getContent()?.querySelector?.("[data-favorite-connector-station]");
+      if (popupAlert) updateFavoriteConnectorAlert(popupAlert, station);
+    }
+  }
+
   function highlightStation(id) {
     document.querySelectorAll(".station-card").forEach((card) => card.classList.toggle("is-highlighted", card.dataset.stationId === id));
     const marker = markers.get(id);
@@ -270,11 +360,13 @@
   function pinIcon(station) {
     const state = station.current === false ? " unavailable" : !station.known ? " unknown" : station.available === 0 ? " busy" : "";
     const favorite = favorites.has(station.id) ? " favorite" : "";
+    const favoriteConnectorAvailable = favoriteConnectorState(station).available > 0 ? " connector-favorite-available" : "";
     const profile = chargingProfile(station);
     const label = station.known && station.total ? `${station.available}/${station.total}` : "?";
     const favoriteBadge = favorite ? '<i aria-hidden="true">♥</i>' : "";
+    const connectorFavoriteBadge = favoriteConnectorAvailable ? '<em aria-hidden="true">♥</em>' : "";
     const profileBadge = `<b aria-hidden="true">${profile.label}</b>`;
-    return L.divIcon({ className: `charger-pin${state}${favorite} speed-${profile.kind}`, html: `<span>${label}</span>${favoriteBadge}${profileBadge}` });
+    return L.divIcon({ className: `charger-pin${state}${favorite}${favoriteConnectorAvailable} speed-${profile.kind}`, html: `<span>${label}</span>${favoriteBadge}${connectorFavoriteBadge}${profileBadge}` });
   }
 
   function connectorText(values) {
@@ -323,7 +415,8 @@
       .map((station) => ({ ...station, distance: haversineMetres(searchCentre, station.position) }))
       .filter((station) => station.distance <= activeRadius)
       .filter(stationMatchesFilters)
-      .sort((a, b) => Number(favorites.has(b.id)) - Number(favorites.has(a.id))
+      .sort((a, b) => Number(favoriteConnectorState(b).available > 0) - Number(favoriteConnectorState(a).available > 0)
+        || Number(favorites.has(b.id)) - Number(favorites.has(a.id))
         || Number(b.current !== false) - Number(a.current !== false)
         || a.distance - b.distance
         || b.available - a.available);
@@ -332,7 +425,8 @@
   function markerTitle(station) {
     const profile = chargingProfile(station);
     const power = station.powerKw ? ` · up to ${Math.round(station.powerKw)} kW` : "";
-    return `${favorites.has(station.id) ? "Favorite · " : ""}${station.address}: ${availabilityState(station).text} · ${profile.description}${power}`;
+    const favoriteConnector = favoriteConnectorState(station).available > 0 ? "Favorite connector available · " : "";
+    return `${favoriteConnector}${favorites.has(station.id) ? "Favorite station · " : ""}${station.address}: ${availabilityState(station).text} · ${profile.description}${power}`;
   }
 
   function stationFacts(station) {
@@ -373,8 +467,32 @@
     return text ? text.replace(/^connected /, "") : "duration unknown";
   }
 
-  function renderConnectorDetails(container, payload) {
+  function setConnectorFavoriteButtonState(button, station, chargePoint) {
+    const selected = connectorFavorites.has(connectorFavoriteKey(station.id, chargePoint.id));
+    const label = chargePoint.label || chargePoint.id;
+    button.dataset.favoriteConnectorId = chargePoint.id;
+    button.dataset.favoriteStationId = station.id;
+    button.setAttribute("aria-pressed", String(selected));
+    button.setAttribute("aria-label", `${selected ? "Remove" : "Add"} connector ${label} ${selected ? "from" : "to"} favorites`);
+    button.title = selected ? "Remove connector favorite" : "Favorite this connector";
+    button.textContent = selected ? "♥" : "♡";
+  }
+
+  function toggleConnectorFavorite(station, chargePoint) {
+    const key = connectorFavoriteKey(station.id, chargePoint.id);
+    if (connectorFavorites.has(key)) connectorFavorites.delete(key);
+    else connectorFavorites.set(key, {
+      id: chargePoint.id,
+      stationId: station.id,
+      label: chargePoint.label || chargePoint.id
+    });
+    saveConnectorFavorites();
+    refreshFavoriteConnectorPresentation(station);
+  }
+
+  function renderConnectorDetails(container, payload, station) {
     container.replaceChildren();
+    container.dataset.stationId = station.id;
     if (!payload.chargePoints?.length) {
       container.textContent = "No individual connector information was supplied.";
       container.className = `popup-details-message${container.dataset.variant === "card" ? " card-details-message" : ""}`;
@@ -385,7 +503,10 @@
     list.className = `popup-connector-list${container.dataset.variant === "card" ? " card-connector-list" : ""}`;
     payload.chargePoints.forEach((chargePoint) => {
       const row = document.createElement("div");
-      row.className = "popup-connector";
+      const selected = connectorFavorites.has(connectorFavoriteKey(station.id, chargePoint.id));
+      const availableFavorite = selected && String(chargePoint.status).toUpperCase() === "AVAILABLE";
+      row.className = `popup-connector${selected ? " is-favorite-connector" : ""}${availableFavorite ? " is-favorite-available" : ""}`;
+      row.dataset.connectorId = chargePoint.id;
       const heading = document.createElement("div");
       heading.className = "popup-connector-heading";
       const id = document.createElement("span");
@@ -396,7 +517,18 @@
       const statusClass = state.value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       status.className = `popup-connector-status is-${statusClass}`;
       status.textContent = state.label;
-      heading.append(id, status);
+      const headingActions = document.createElement("div");
+      headingActions.className = "popup-connector-heading-actions";
+      const favorite = document.createElement("button");
+      favorite.className = "connector-favorite-button";
+      favorite.type = "button";
+      setConnectorFavoriteButtonState(favorite, station, chargePoint);
+      favorite.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleConnectorFavorite(station, chargePoint);
+      });
+      headingActions.append(status, favorite);
+      heading.append(id, headingActions);
 
       const descriptions = (chargePoint.plugs || []).map((plug) => {
         const parts = [plug.name || plug.type || "Connector"];
@@ -414,19 +546,13 @@
     container.append(list);
   }
 
-  async function loadConnectorDetails(station, button, container) {
+  async function fetchConnectorDetails(station) {
     const cached = connectorDetails.get(station.id);
     const cachedAt = cached?.generatedAt ? new Date(cached.generatedAt).getTime() : 0;
-    if (cached && Date.now() - cachedAt < 60000) {
-      renderConnectorDetails(container, cached);
-      return;
-    }
-    button.disabled = true;
-    button.textContent = "Loading connector details…";
-    container.hidden = false;
-    container.className = `popup-details-message${container.dataset.variant === "card" ? " card-details-message" : ""}`;
-    container.textContent = "Contacting EnBW…";
-    try {
+    if (cached && Date.now() - cachedAt < 60000) return cached;
+    if (connectorDetailRequests.has(station.id)) return connectorDetailRequests.get(station.id);
+
+    const request = (async () => {
       const url = new URL(CHARGER_DETAIL_API_URL, window.location.href);
       url.searchParams.set("id", station.id);
       const response = await fetch(url, { cache: "no-store", headers: { Accept: "application/json" } });
@@ -434,7 +560,25 @@
       if (!response.ok) throw new Error(payload.error || `Charging service returned ${response.status}`);
       if (!Array.isArray(payload.chargePoints)) throw new Error("Invalid connector response");
       connectorDetails.set(station.id, payload);
-      renderConnectorDetails(container, payload);
+      return payload;
+    })();
+    connectorDetailRequests.set(station.id, request);
+    try {
+      return await request;
+    } finally {
+      connectorDetailRequests.delete(station.id);
+    }
+  }
+
+  async function loadConnectorDetails(station, button, container) {
+    button.disabled = true;
+    button.textContent = "Loading connector details…";
+    container.hidden = false;
+    container.className = `popup-details-message${container.dataset.variant === "card" ? " card-details-message" : ""}`;
+    container.textContent = "Contacting EnBW…";
+    try {
+      const payload = await fetchConnectorDetails(station);
+      renderConnectorDetails(container, payload, station);
       button.textContent = "Hide connector details";
     } catch (error) {
       container.textContent = `Connector details unavailable: ${error.message}`;
@@ -442,6 +586,21 @@
     } finally {
       button.disabled = false;
       markers.get(station.id)?.getPopup()?.update();
+    }
+  }
+
+  async function refreshFavoriteConnectorAvailability(requestId) {
+    const favoriteStationIds = new Set([...connectorFavorites.values()].map((item) => item.stationId));
+    const relevantStations = visibleStations()
+      .filter((station) => station.current !== false && favoriteStationIds.has(station.id));
+    for (const station of relevantStations) {
+      try {
+        await fetchConnectorDetails(station);
+        if (requestId !== searchRequestId) return;
+        refreshFavoriteConnectorPresentation(station);
+      } catch {
+        // A failed background refresh should not interrupt the main charger search.
+      }
     }
   }
 
@@ -585,7 +744,7 @@
       await loadConnectorDetails(station, detailsButton, details);
     });
 
-    content.append(title, status, context);
+    content.append(title, status, favoriteConnectorAlert(station, "popup"), context);
     if (facts.childElementCount) content.append(facts);
     content.append(freshness, actions, detailsButton, details);
     return content;
@@ -609,6 +768,7 @@
     byId("available-count").textContent = String(available);
     byId("location-count").textContent = String(visible.length);
     byId("radius-summary").textContent = activeRadius < 1000 ? `${activeRadius} m` : `${activeRadius / 1000} km`;
+    void refreshFavoriteConnectorAvailability(searchRequestId);
 
     if (!map) return;
     stationLayer.clearLayers();

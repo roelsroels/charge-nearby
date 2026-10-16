@@ -18,12 +18,12 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.2\.0/);
-  assert.match(html, /styles\.css\?v=1\.2\.0/);
+  assert.match(html, /app\.js\?v=1\.3\.0/);
+  assert.match(html, /styles\.css\?v=1\.3\.0/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.2\.0<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.3\.0<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /id="connector-filter"/);
@@ -54,7 +54,7 @@ test("page exposes the charging search", () => {
   assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/images/marker-shadow.png", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../docs/screenshots/charge-nearby-1012-js-overview.jpg", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../docs/screenshots/charge-nearby-1012-js-results.jpg", import.meta.url)), true);
-  assert.match(readme, /longest-connected overview for postcode 1012 JS/);
+  assert.match(readme, /available favorite connector highlighted on the map/);
   assert.match(readme, /ranks occupied connectors in the selected search/);
   assert.match(readme, /represents approximate plug-in time/);
 });
@@ -87,7 +87,20 @@ test("favorites are persistent and visually distinct", () => {
   assert.doesNotMatch(css, /\.station-grid \{[^}]*overflow-y: auto/);
   assert.match(css, /\.charger-pin\.favorite/);
   assert.match(css, /\.popup-favorite-button/);
-  assert.match(html, /Favorites appear first/);
+  assert.match(html, /Available favorite connectors appear first/);
+});
+
+test("individual connector favorites are persistent and highlight availability", () => {
+  assert.match(js, /charge-nearby:connector-favorites:v1/);
+  assert.match(js, /function toggleConnectorFavorite/);
+  assert.match(js, /function refreshFavoriteConnectorAvailability/);
+  assert.match(js, /favoriteConnectorState\(station\)\.available/);
+  assert.match(js, /connector-favorite-button/);
+  assert.match(js, /Favorite connector available/);
+  assert.match(css, /\.station-card\.has-available-favorite-connector/);
+  assert.match(css, /\.charger-pin\.connector-favorite-available/);
+  assert.match(css, /\.popup-connector\.is-favorite-available/);
+  assert.match(readme, /Individual connectors can be favorited/);
 });
 
 test("the last successful postcode is restored", () => {

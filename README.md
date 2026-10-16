@@ -4,22 +4,24 @@
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
-Current release: **v1.2.0**
+Current release: **v1.3.0**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
 ## Screenshots
 
-![Charge Nearby longest-connected overview for postcode 1012 JS](docs/screenshots/charge-nearby-1012-js-overview.jpg)
+![Charge Nearby overview for postcode 1012 JS with an available favorite connector highlighted on the map](docs/screenshots/charge-nearby-1012-js-overview.jpg)
 
-![Charge Nearby charger results for postcode 1012 JS with a favorite location prioritized](docs/screenshots/charge-nearby-1012-js-results.jpg)
+![Charge Nearby connector details for postcode 1012 JS with an available favorite connector prioritized](docs/screenshots/charge-nearby-1012-js-results.jpg)
 
 The `Longest connected` button ranks occupied connectors in the selected search
 circle by their approximate plug-in duration. Selecting a ranked connector opens
 its station on the map. Individual connector panels are loaded only after selecting
 `Show connector details`. For occupied connectors, `connected ~…` is calculated
 from EnBW's status timestamp and represents approximate plug-in time, regardless
-of whether power is flowing.
+of whether power is flowing. The heart beside an individual EVSE saves that
+connector; an available connector favorite receives the coral station and map
+highlight shown above.
 
 > [!IMPORTANT]
 > This is an unofficial project. It is not affiliated with or supported by EnBW. The EnBW web-map endpoint and browser key can change without notice.
@@ -135,6 +137,7 @@ example, then validate and reload nginx again.
 - The map, availability total, charger list and longest-connected overview can be filtered by connector family (`AC`, `DC fast`, `Type 2`, `CCS` or `CHAdeMO`) and minimum charging speed. Map markers retain their availability color and add a separate `AC`, blue `DC`, or purple `HPC` (150+ kW) badge. Speed filtering uses each station's maximum advertised power; connector-detail rows use the individual plug power supplied by EnBW.
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
 - Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.
+- Individual connectors can be favorited after opening connector details. Connector favorites are stored only in the current browser. When a favorite connector at a visible station is currently available, its station is promoted in the list and receives a coral card, map-ring and `Favorite connector available` notice. Only visible stations containing saved connector favorites receive automatic background detail refreshes.
 - Map popups and charger cards show operator, distance, plug type and maximum power. Individual connector status, power, cable and update time can be loaded on demand from either view with `Show connector details`. For an occupied connector, the interface shows the approximate time since EnBW recorded that occupied state as `connected ~…`; this indicates how long the car appears to have been plugged in, not whether power is flowing. Tariff data is deliberately excluded.
 - `Longest connected` scans connector details on request and ranks occupied connectors within the currently selected search circle by approximate connected duration. It shows up to 20 connectors. To bound upstream work, circles containing more than 40 current stations must be narrowed before they can be scanned.
 - The last successfully searched postcode is stored in the current browser and restored on the next visit.
