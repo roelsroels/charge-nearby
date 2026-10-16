@@ -781,6 +781,10 @@
     searchPostcode(byId("postcode").value);
   });
 
+  document.querySelector(".reload-button").addEventListener("click", () => {
+    window.location.reload();
+  });
+
   document.querySelector(".map-list-toggle").addEventListener("click", (event) => {
     const button = event.currentTarget;
     const pressed = button.getAttribute("aria-pressed") === "true";

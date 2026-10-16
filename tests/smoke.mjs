@@ -34,6 +34,9 @@ test("page exposes the charging search", () => {
   assert.match(html, /value="150">150 kW or faster/);
   assert.match(html, /class="charger-profile-key"/);
   assert.match(html, /class="profile-hpc">HPC/);
+  assert.match(html, /class="reload-button"[^>]*aria-label="Reload page"/);
+  assert.match(js, /querySelector\("\.reload-button"\).*addEventListener\("click"/s);
+  assert.match(js, /window\.location\.reload\(\)/);
   assert.match(html, /class="connected-overview-button"/);
   assert.match(html, /id="connected-overview-dialog"/);
   assert.match(html, /property="og:image" content="og\.png"/);
