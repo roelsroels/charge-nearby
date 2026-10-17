@@ -1,4 +1,4 @@
-name: Coverage thresholds
+name: Coverage ≥85% lines
 
 on:
   push:

@@ -1,18 +1,22 @@
 # Charge Nearby
 
 [![Validate site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
-[![Latest release](https://img.shields.io/github/v/release/roelsroels/charge-nearby?display_name=tag&sort=semver)](https://github.com/roelsroels/charge-nearby/releases/latest)
+[![Latest release](https://img.shields.io/badge/release-v1.3.0-blue.svg)](https://github.com/roelsroels/charge-nearby/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white)](package.json)
 [![Live site](https://img.shields.io/website?url=https%3A%2F%2Fcharge.roels.com&up_message=online&down_message=offline&label=live%20site)](https://charge.roels.com)
 [![Docker Compose](https://img.shields.io/badge/Docker%20Compose-supported-2496ED?logo=docker&logoColor=white)](compose.yaml)
 [![Runtime dependencies: 0](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
+[![Coverage ≥85% lines](https://github.com/roelsroels/charge-nearby/actions/workflows/coverage.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/coverage.yml)
+[![CodeQL security](https://github.com/roelsroels/charge-nearby/actions/workflows/codeql.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/codeql.yml)
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
 Current release: **v1.3.0**
 
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
+
+CI enforces minimum application-code coverage of 85% lines, 60% branches, and 85% functions. GitHub CodeQL runs its extended JavaScript security queries on every change to `main`, on pull requests, and weekly.
 
 ## Screenshots
 

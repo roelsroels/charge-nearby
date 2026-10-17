@@ -42,7 +42,7 @@ test("page exposes the charging search", () => {
   assert.match(html, /property="og:image" content="og\.png"/);
   assert.match(html, /href="vendor\/leaflet\/leaflet\.css\?v=1\.9\.4"/);
   assert.match(html, /src="vendor\/leaflet\/leaflet\.js\?v=1\.9\.4"/);
-  assert.doesNotMatch(html, /unpkg\.com/);
+  assert.equal(html.includes("unpkg.com"), false);
   assert.equal(fs.existsSync(new URL("../html/og.png", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/LICENSE", import.meta.url)), true);
   assert.equal(fs.existsSync(new URL("../html/vendor/leaflet/leaflet.css", import.meta.url)), true);

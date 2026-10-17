@@ -11,29 +11,36 @@ if (badges.length === 0) {
   throw new Error("README.md does not contain any linked badges");
 }
 
-const requiredBadges = [
-  "Validate site",
-  "Latest release",
-  "License: MIT",
-  "Node.js",
-  "Live site",
-  "Docker Compose",
-  "Runtime dependencies: 0",
-];
-for (const label of requiredBadges) {
+const approvedBadgeImages = new Map([
+  ["Validate site", "https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg"],
+  ["Latest release", "https://img.shields.io/badge/release-v1.3.0-blue.svg"],
+  ["License: MIT", "https://img.shields.io/badge/license-MIT-blue.svg"],
+  ["Node.js", "https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white"],
+  ["Live site", "https://img.shields.io/website?url=https%3A%2F%2Fcharge.roels.com&up_message=online&down_message=offline&label=live%20site"],
+  ["Docker Compose", "https://img.shields.io/badge/Docker%20Compose-supported-2496ED?logo=docker&logoColor=white"],
+  ["Runtime dependencies: 0", "https://img.shields.io/badge/runtime%20dependencies-0-brightgreen"],
+  ["Coverage ≥85% lines", "https://github.com/roelsroels/charge-nearby/actions/workflows/coverage.yml/badge.svg"],
+  ["CodeQL security", "https://github.com/roelsroels/charge-nearby/actions/workflows/codeql.yml/badge.svg"],
+]);
+for (const label of approvedBadgeImages.keys()) {
   if (!badges.some((badge) => badge.label === label)) {
     throw new Error(`README.md is missing the required ${label} badge`);
   }
 }
 
 for (const badge of badges) {
+  const approvedImageUrl = approvedBadgeImages.get(badge.label);
+  if (!approvedImageUrl || badge.imageUrl !== approvedImageUrl) {
+    throw new Error(`${badge.label} badge does not use its approved image URL`);
+  }
+
   if (/^https:\/\//.test(badge.target)) {
     new URL(badge.target);
   } else {
     await access(path.resolve(repositoryRoot, badge.target));
   }
 
-  const response = await fetch(badge.imageUrl, {
+  const response = await fetch(approvedImageUrl, {
     headers: { "User-Agent": "charge-nearby-badge-check" },
     signal: AbortSignal.timeout(15_000),
   });
@@ -62,5 +69,31 @@ const runtimeDependencyCount = Object.keys(packageMetadata.dependencies ?? {}).l
 if (runtimeDependencyCount !== 0) {
   throw new Error(
     `Runtime dependencies badge reports 0, but package.json declares ${runtimeDependencyCount}`,
+  );
+}
+
+const expectedReleaseTag = `v${packageMetadata.version}`;
+const releaseBadgeUrl = approvedBadgeImages.get("Latest release");
+if (!releaseBadgeUrl.includes(`release-${expectedReleaseTag}-`)) {
+  throw new Error(`Latest release badge does not match ${expectedReleaseTag} from package.json`);
+}
+
+const latestReleaseResponse = await fetch(
+  "https://api.github.com/repos/roelsroels/charge-nearby/releases/latest",
+  {
+    headers: {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "charge-nearby-badge-check",
+    },
+    signal: AbortSignal.timeout(15_000),
+  },
+);
+if (!latestReleaseResponse.ok) {
+  throw new Error(`GitHub latest release lookup returned HTTP ${latestReleaseResponse.status}`);
+}
+const latestRelease = await latestReleaseResponse.json();
+if (latestRelease.tag_name !== expectedReleaseTag) {
+  throw new Error(
+    `GitHub latest release is ${latestRelease.tag_name}, expected ${expectedReleaseTag}`,
   );
 }
