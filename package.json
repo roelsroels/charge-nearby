@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node server.mjs",
     "check": "node --check html/app.js && node --check server.mjs && node --check lib/enbw.mjs",
+    "check:badges": "node scripts/check-badges.mjs",
     "test": "node --test tests/*.mjs"
   }
 }

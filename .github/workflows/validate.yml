@@ -20,5 +20,7 @@ jobs:
           node-version: 22
       - name: Check JavaScript syntax
         run: npm run check
+      - name: Check README badges
+        run: npm run check:badges
       - name: Run tests
         run: npm test
