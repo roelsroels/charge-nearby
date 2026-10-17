@@ -1,6 +1,9 @@
 # Charge Nearby
 
 [![Validate site](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml)
+[![Latest release](https://img.shields.io/github/v/release/roelsroels/charge-nearby?display_name=tag&sort=semver)](https://github.com/roelsroels/charge-nearby/releases/latest)
+[![License](https://img.shields.io/github/license/roelsroels/charge-nearby)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white)](package.json)
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
