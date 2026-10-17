@@ -21,6 +21,10 @@ const approvedBadgeImages = new Map([
   ["Runtime dependencies: 0", "https://img.shields.io/badge/runtime%20dependencies-0-brightgreen"],
   ["Coverage ≥85% lines", "https://github.com/roelsroels/charge-nearby/actions/workflows/coverage.yml/badge.svg"],
   ["CodeQL security", "https://github.com/roelsroels/charge-nearby/actions/workflows/codeql.yml/badge.svg"],
+  ["Deployment security", "https://github.com/roelsroels/charge-nearby/actions/workflows/deployment-security.yml/badge.svg"],
+  ["Container security", "https://github.com/roelsroels/charge-nearby/actions/workflows/container-security.yml/badge.svg"],
+  ["OpenSSF Scorecard", "https://api.scorecard.dev/projects/github.com/roelsroels/charge-nearby/badge"],
+  ["Security policy", "https://img.shields.io/badge/security-policy-blue.svg"],
 ]);
 for (const label of approvedBadgeImages.keys()) {
   if (!badges.some((badge) => badge.label === label)) {

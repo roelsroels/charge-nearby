@@ -9,6 +9,10 @@
 [![Runtime dependencies: 0](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
 [![Coverage ≥85% lines](https://github.com/roelsroels/charge-nearby/actions/workflows/coverage.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/coverage.yml)
 [![CodeQL security](https://github.com/roelsroels/charge-nearby/actions/workflows/codeql.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/codeql.yml)
+[![Deployment security](https://github.com/roelsroels/charge-nearby/actions/workflows/deployment-security.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/deployment-security.yml)
+[![Container security](https://github.com/roelsroels/charge-nearby/actions/workflows/container-security.yml/badge.svg)](https://github.com/roelsroels/charge-nearby/actions/workflows/container-security.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/roelsroels/charge-nearby/badge)](https://scorecard.dev/viewer/?uri=github.com/roelsroels/charge-nearby)
+[![Security policy](https://img.shields.io/badge/security-policy-blue.svg)](.github/SECURITY.md)
 
 A small website for finding currently available public EV charging stations around a postcode in the European Netherlands.
 
@@ -17,6 +21,8 @@ Current release: **v1.3.0**
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
 CI enforces minimum application-code coverage of 85% lines, 60% branches, and 85% functions. GitHub CodeQL runs its extended JavaScript security queries on every change to `main`, on pull requests, and weekly.
+
+The live deployment's security headers and the runtime container's fixable high/critical vulnerabilities are checked automatically. OpenSSF Scorecard monitors supply-chain practices, and Dependabot proposes weekly Docker and GitHub Actions updates. Please report vulnerabilities through the [security policy](.github/SECURITY.md).
 
 The last successful postcode and favorites are stored unencrypted in that browser's local storage so they survive a return visit. They can be removed using the browser's site-data controls.
 
