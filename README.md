@@ -18,6 +18,8 @@ The browser uses PDOK to locate the postcode. A dependency-free Node service fet
 
 CI enforces minimum application-code coverage of 85% lines, 60% branches, and 85% functions. GitHub CodeQL runs its extended JavaScript security queries on every change to `main`, on pull requests, and weekly.
 
+The last successful postcode and favorites are stored unencrypted in that browser's local storage so they survive a return visit. They can be removed using the browser's site-data controls.
+
 ## Screenshots
 
 ![Charge Nearby overview for postcode 1012 JS with an available favorite connector highlighted on the map](docs/screenshots/charge-nearby-1012-js-overview.jpg)
