@@ -22,5 +22,11 @@ jobs:
         run: npm run check
       - name: Check README badges
         run: npm run check:badges
+      - name: Validate container deployment
+        env:
+          ENBW_API_KEY: ci-placeholder
+        run: |
+          docker compose config --quiet
+          docker build --tag charge-nearby:ci .
       - name: Run tests
         run: npm test

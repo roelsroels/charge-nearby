@@ -11,7 +11,15 @@ if (badges.length === 0) {
   throw new Error("README.md does not contain any linked badges");
 }
 
-const requiredBadges = ["Validate site", "Latest release", "License: MIT", "Node.js"];
+const requiredBadges = [
+  "Validate site",
+  "Latest release",
+  "License: MIT",
+  "Node.js",
+  "Live site",
+  "Docker Compose",
+  "Runtime dependencies: 0",
+];
 for (const label of requiredBadges) {
   if (!badges.some((badge) => badge.label === label)) {
     throw new Error(`README.md is missing the required ${label} badge`);
@@ -45,4 +53,14 @@ for (const badge of badges) {
   }
 
   console.log(`✓ ${badge.label}`);
+}
+
+const packageMetadata = JSON.parse(
+  await readFile(path.join(repositoryRoot, "package.json"), "utf8"),
+);
+const runtimeDependencyCount = Object.keys(packageMetadata.dependencies ?? {}).length;
+if (runtimeDependencyCount !== 0) {
+  throw new Error(
+    `Runtime dependencies badge reports 0, but package.json declares ${runtimeDependencyCount}`,
+  );
 }
