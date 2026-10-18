@@ -20,16 +20,21 @@ const CONNECTOR_FILTERS = new Set(["all", "ac", "dc", "type2", "ccs", "chademo"]
 const MIN_POWER_FILTERS = new Set([0, 11, 22, 50, 150]);
 const CONNECTED_STATES = new Set(["OCCUPIED", "CHARGING", "SUSPENDED_EV", "SUSPENDED_EVSE"]);
 const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "connect-src 'self' https://api.pdok.nl https://tile.openstreetmap.org",
+  "default-src 'none'",
+  "base-uri 'none'",
+  "connect-src 'self' https://api.pdok.nl",
   "font-src 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "img-src 'self' https://tile.openstreetmap.org",
+  "frame-src 'none'",
+  "img-src 'self' data: https://tile.openstreetmap.org",
+  "manifest-src 'self'",
+  "media-src 'none'",
   "object-src 'none'",
   "script-src 'self'",
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
+  "worker-src 'none'",
   "upgrade-insecure-requests",
 ].join("; ");
 const MIME_TYPES = new Map([

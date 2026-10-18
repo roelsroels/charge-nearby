@@ -190,7 +190,7 @@ test("nginx example constrains the public API and browser capabilities", () => {
   assert.match(nginx, /location = \/api\/health/);
   assert.match(nginx, /allow 192\.168\.1\.0\/24/);
   assert.match(nginx, /location \^~ \/api\//);
-  assert.match(nginx, /add_header Content-Security-Policy .*frame-ancestors 'none'.* always;/);
+  assert.match(nginx, /add_header Content-Security-Policy "default-src 'none';.*base-uri 'none';.*frame-ancestors 'none';.*script-src-attr 'none';.*worker-src 'none'.*" always;/);
   assert.match(nginx, /add_header X-Frame-Options "DENY" always;/);
   assert.match(nginx, /server_name example\.com/);
   assert.match(nginx, /add_header Cross-Origin-Embedder-Policy "credentialless" always;/);

@@ -295,6 +295,9 @@ test("server continues to serve the frontend", async () => {
     assert.match(response.headers.get("content-type"), /text\/html/);
     assert.match(response.headers.get("content-security-policy"), /frame-ancestors 'none'/);
     assert.match(response.headers.get("content-security-policy"), /connect-src 'self' https:\/\/api\.pdok\.nl/);
+    assert.match(response.headers.get("content-security-policy"), /default-src 'none'/);
+    assert.match(response.headers.get("content-security-policy"), /base-uri 'none'/);
+    assert.match(response.headers.get("content-security-policy"), /script-src-attr 'none'/);
     assert.equal(response.headers.get("x-frame-options"), "DENY");
     assert.match(await response.text(), /Charge Nearby/);
   });
