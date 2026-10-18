@@ -298,6 +298,9 @@ test("server continues to serve the frontend", async () => {
     assert.match(response.headers.get("content-security-policy"), /default-src 'none'/);
     assert.match(response.headers.get("content-security-policy"), /base-uri 'none'/);
     assert.match(response.headers.get("content-security-policy"), /script-src-attr 'none'/);
+    assert.match(response.headers.get("content-security-policy"), /style-src 'self'/);
+    assert.match(response.headers.get("content-security-policy"), /style-src-attr 'none'/);
+    assert.doesNotMatch(response.headers.get("content-security-policy"), /unsafe-inline/);
     assert.equal(response.headers.get("x-frame-options"), "DENY");
     assert.match(await response.text(), /Charge Nearby/);
   });

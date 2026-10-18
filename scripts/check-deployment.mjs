@@ -40,11 +40,16 @@ for (const directive of [
   "object-src 'none'",
   "script-src 'self'",
   "script-src-attr 'none'",
+  "style-src 'self'",
+  "style-src-attr 'none'",
   "worker-src 'none'",
 ]) {
   if (!contentSecurityPolicy.includes(directive)) {
     throw new Error(`Content-Security-Policy is missing ${directive}`);
   }
+}
+if (/['"]unsafe-inline['"]/i.test(contentSecurityPolicy)) {
+  throw new Error("Content-Security-Policy must not allow unsafe-inline");
 }
 
 const securityTxtUrl = new URL(".well-known/security.txt", deploymentUrl);

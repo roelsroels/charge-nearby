@@ -33,7 +33,8 @@ const CONTENT_SECURITY_POLICY = [
   "object-src 'none'",
   "script-src 'self'",
   "script-src-attr 'none'",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self'",
+  "style-src-attr 'none'",
   "worker-src 'none'",
   "upgrade-insecure-requests",
 ].join("; ");

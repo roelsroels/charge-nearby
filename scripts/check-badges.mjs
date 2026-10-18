@@ -13,7 +13,7 @@ if (badges.length === 0) {
 
 const approvedBadgeImages = new Map([
   ["Validate site", "https://github.com/roelsroels/charge-nearby/actions/workflows/validate.yml/badge.svg"],
-  ["Latest release", "https://img.shields.io/badge/release-v1.3.0-blue.svg"],
+  ["Latest release", "https://img.shields.io/badge/release-v1.3.1-blue.svg"],
   ["License: MIT", "https://img.shields.io/badge/license-MIT-blue.svg"],
   ["Node.js", "https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white"],
   ["Live site", "https://img.shields.io/website?url=https%3A%2F%2Fcharge.roels.com&up_message=online&down_message=offline&label=live%20site"],

@@ -19,12 +19,12 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.3\.0/);
-  assert.match(html, /styles\.css\?v=1\.3\.0/);
+  assert.match(html, /app\.js\?v=1\.3\.1/);
+  assert.match(html, /styles\.css\?v=1\.3\.1/);
   assert.match(html, /Available charger, <em>closeby<\/em>/);
   assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.3\.0<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.3\.1<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /id="connector-filter"/);
@@ -190,7 +190,8 @@ test("nginx example constrains the public API and browser capabilities", () => {
   assert.match(nginx, /location = \/api\/health/);
   assert.match(nginx, /allow 192\.168\.1\.0\/24/);
   assert.match(nginx, /location \^~ \/api\//);
-  assert.match(nginx, /add_header Content-Security-Policy "default-src 'none';.*base-uri 'none';.*frame-ancestors 'none';.*script-src-attr 'none';.*worker-src 'none'.*" always;/);
+  assert.match(nginx, /add_header Content-Security-Policy "default-src 'none';.*base-uri 'none';.*frame-ancestors 'none';.*script-src-attr 'none';.*style-src 'self';.*style-src-attr 'none';.*worker-src 'none'.*" always;/);
+  assert.doesNotMatch(nginx, /unsafe-inline/);
   assert.match(nginx, /add_header X-Frame-Options "DENY" always;/);
   assert.match(nginx, /server_name example\.com/);
   assert.match(nginx, /add_header Cross-Origin-Embedder-Policy "credentialless" always;/);
