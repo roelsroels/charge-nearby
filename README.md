@@ -125,11 +125,35 @@ than an IP allowlist. Keep operational endpoints such as `/api/health` private. 
 nginx vhost sets CSP and frame protection explicitly, with the app providing the
 same headers as a fallback.
 
+### Security contact file
+
+The nginx example serves the standard `/.well-known/security.txt` URL from
+`/etc/nginx/security.txt`, deliberately outside this repository. Start with the
+public example, then edit the copied file on the server with your own contact and
+canonical URL:
+
+```sh
+sudo cp nginx/security.txt.example /etc/nginx/security.txt
+sudoedit /etc/nginx/security.txt
+```
+
+Set `Expires` to a future date and review it at least yearly. The optional `Policy`
+line may point to this repository's GitHub security policy, another disclosure
+policy, or be removed. The local `nginx/security.txt` filename is ignored by Git as
+an additional safeguard; do not put personal contact information in the tracked
+example.
+
 After installing or updating the vhost, validate and reload nginx:
 
 ```sh
 sudo nginx -t
 sudo systemctl reload nginx
+```
+
+Confirm that the public file is plain text and contains your deployed values:
+
+```sh
+curl -i https://your-domain.example/.well-known/security.txt
 ```
 
 Confirm that nginx is forwarding the new route:

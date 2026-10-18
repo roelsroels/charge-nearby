@@ -45,6 +45,13 @@ server {
     add_header Permissions-Policy "camera=(), microphone=()" always;
     add_header X-Frame-Options "DENY" always;
 
+    # Keep the real security contact outside the repository. Copy the supplied
+    # security.txt.example to /etc/nginx/security.txt and replace its examples.
+    location = /.well-known/security.txt {
+        alias /etc/nginx/security.txt;
+        default_type text/plain;
+    }
+
     # The browser needs this route. Limit it instead of making it private.
     location = /api/chargers {
         limit_req zone=charge_nearby_api burst=4 nodelay;
