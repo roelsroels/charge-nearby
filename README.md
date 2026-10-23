@@ -18,6 +18,8 @@ A small website for finding currently available public EV charging stations arou
 
 Current release: **v1.3.1**
 
+See [CHANGELOG.md](CHANGELOG.md) for release history and unreleased changes.
+
 The browser uses PDOK to locate the postcode. A dependency-free Node service fetches charger locations and availability from the EnBW mobility+ map backend, resolves grouped map results, briefly caches searches, and serves the frontend. The EnBW key never reaches the browser or repository.
 
 CI enforces minimum application-code coverage of 85% lines, 60% branches, and 85% functions. GitHub CodeQL runs its extended JavaScript security queries on every change to `main`, on pull requests, and weekly.
@@ -213,6 +215,7 @@ The automated tests use simulated EnBW responses and do not need a real key. A l
 - `html/` — browser frontend
 - `compose.yaml` and `Dockerfile` — container deployment
 - `tests/` — unit, server and frontend smoke tests
+- `CHANGELOG.md` — release history and unreleased changes
 
 ## License
 

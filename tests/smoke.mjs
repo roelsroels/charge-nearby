@@ -10,6 +10,7 @@ const dockerfile = fs.readFileSync(new URL("../Dockerfile", import.meta.url), "u
 const nginx = fs.readFileSync(new URL("../nginx/charge-nearby.conf.example", import.meta.url), "utf8");
 const securityTxtExample = fs.readFileSync(new URL("../nginx/security.txt.example", import.meta.url), "utf8");
 const readme = fs.readFileSync(new URL("../README.md", import.meta.url), "utf8");
+const changelog = fs.readFileSync(new URL("../CHANGELOG.md", import.meta.url), "utf8");
 
 test("page exposes the charging search", () => {
   assert.match(html, /id="charger-search"/);
@@ -57,6 +58,19 @@ test("page exposes the charging search", () => {
   assert.match(readme, /available favorite connector highlighted on the map/);
   assert.match(readme, /ranks occupied connectors in the selected search/);
   assert.match(readme, /represents approximate plug-in time/);
+});
+
+test("changelog documents every release and current unreleased work", () => {
+  assert.match(readme, /\[CHANGELOG\.md\]\(CHANGELOG\.md\)/);
+  assert.match(changelog, /^## \[Unreleased\]/m);
+  for (const version of [
+    "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5", "1.0.6", "1.0.7",
+    "1.1.0", "1.1.1", "1.1.2", "1.1.3", "1.2.0", "1.3.0", "1.3.1",
+  ]) {
+    assert.match(changelog, new RegExp(`^## \\[${version.replaceAll(".", "\\.")}\\] - \\d{4}-\\d{2}-\\d{2}$`, "m"));
+  }
+  assert.match(changelog, /Reconcile replaced EnBW station IDs/);
+  assert.match(changelog, /\[Unreleased\]: https:\/\/github\.com\/roelsroels\/charge-nearby\/compare\/v1\.3\.1\.\.\.HEAD/);
 });
 
 test("postcode and private EnBW API paths stay present", () => {
