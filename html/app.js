@@ -76,6 +76,31 @@
     }
   }
 
+  function migrateSupersededFavoriteIds(nextStations) {
+    let stationFavoritesChanged = false;
+    let connectorFavoritesChanged = false;
+    nextStations.forEach((station) => {
+      const supersededIds = Array.isArray(station.supersededIds)
+        ? station.supersededIds.filter((id) => typeof id === "string" && id !== station.id)
+        : [];
+      supersededIds.forEach((oldStationId) => {
+        if (favorites.delete(oldStationId)) {
+          favorites.add(station.id);
+          stationFavoritesChanged = true;
+        }
+        [...connectorFavorites].forEach(([key, favorite]) => {
+          if (favorite.stationId !== oldStationId) return;
+          connectorFavorites.delete(key);
+          const migrated = { ...favorite, stationId: station.id };
+          connectorFavorites.set(connectorFavoriteKey(station.id, migrated.id), migrated);
+          connectorFavoritesChanged = true;
+        });
+      });
+    });
+    if (stationFavoritesChanged) saveFavoriteIds();
+    if (connectorFavoritesChanged) saveConnectorFavorites();
+  }
+
   function favoriteConnectorState(station) {
     const favoriteIds = new Set([...connectorFavorites.values()]
       .filter((item) => item.stationId === station.id)
@@ -846,7 +871,7 @@
     if (!response.ok) throw new Error(payload.error || `Charging service returned ${response.status}`);
     if (!Array.isArray(payload.stations)) throw new Error("Invalid charging response");
     dataMeta = payload;
-    stations = payload.stations
+    const nextStations = payload.stations
       .filter((station) => Array.isArray(station.position) && station.position.length === 2)
       .map((station) => ({
         ...station,
@@ -855,6 +880,8 @@
         total: Number(station.total) || 0,
         current: station.current !== false
       }));
+    migrateSupersededFavoriteIds(nextStations);
+    stations = nextStations;
     updateDataBadge();
     return payload;
   }

@@ -73,6 +73,35 @@ function positiveInteger(value, fallback) {
   return Number.isSafeInteger(number) && number > 0 ? number : fallback;
 }
 
+function normaliseStationIdentityText(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function stationPhysicalFingerprint(station) {
+  const position = Array.isArray(station.position) ? station.position : [];
+  const latitude = Number(position[0]);
+  const longitude = Number(position[1]);
+  if (![latitude, longitude].every(Number.isFinite)) return null;
+  const connectors = [...new Set((Array.isArray(station.connectors) ? station.connectors : [])
+    .map(normaliseStationIdentityText)
+    .filter(Boolean))]
+    .sort()
+    .join(",");
+  return [
+    latitude.toFixed(6),
+    longitude.toFixed(6),
+    normaliseStationIdentityText(station.address),
+    normaliseStationIdentityText(station.operator),
+    Math.max(0, Number(station.total) || 0),
+    connectors,
+    Math.max(0, Number(station.powerKw) || 0).toFixed(2),
+  ].join("|");
+}
+
 function isWithinNetherlands(lat, lon) {
   return lat >= NETHERLANDS_BOUNDS.minLat && lat <= NETHERLANDS_BOUNDS.maxLat
     && lon >= NETHERLANDS_BOUNDS.minLon && lon <= NETHERLANDS_BOUNDS.maxLon;
@@ -160,8 +189,43 @@ export function createChargeNearbyServer({
     }
 
     const lastSeenAt = new Date(generatedAtMs).toISOString();
+    const liveIds = new Set(liveStations.map((station) => station.id));
+    const liveByFingerprint = new Map();
+    for (const station of liveStations) {
+      const fingerprint = stationPhysicalFingerprint(station);
+      if (!fingerprint) continue;
+      const matches = liveByFingerprint.get(fingerprint) || [];
+      matches.push(station);
+      liveByFingerprint.set(fingerprint, matches);
+    }
+
+    const supersededByCurrentId = new Map();
+    for (const [historicalId, historicalStation] of [...stationHistory]) {
+      if (liveIds.has(historicalId)) continue;
+      const fingerprint = stationPhysicalFingerprint(historicalStation);
+      const matches = fingerprint ? liveByFingerprint.get(fingerprint) : null;
+      if (matches?.length !== 1) continue;
+      const replacement = matches[0];
+      const supersededIds = supersededByCurrentId.get(replacement.id) || new Set();
+      supersededIds.add(historicalId);
+      if (Array.isArray(historicalStation.supersededIds)) {
+        historicalStation.supersededIds.forEach((id) => supersededIds.add(id));
+      }
+      supersededByCurrentId.set(replacement.id, supersededIds);
+      stationHistory.delete(historicalId);
+    }
+
     const currentStations = liveStations.map((station) => {
-      const current = { ...station, current: true, lastSeenAt };
+      const previous = stationHistory.get(station.id);
+      const supersededIds = new Set(Array.isArray(previous?.supersededIds) ? previous.supersededIds : []);
+      (supersededByCurrentId.get(station.id) || []).forEach((id) => supersededIds.add(id));
+      supersededIds.delete(station.id);
+      const current = {
+        ...station,
+        current: true,
+        lastSeenAt,
+        supersededIds: [...supersededIds].sort(),
+      };
       stationHistory.set(station.id, { ...current, lastSeenAtMs: generatedAtMs });
       return current;
     });

@@ -101,6 +101,9 @@ test("individual connector favorites are persistent and highlight availability",
   assert.match(css, /\.charger-pin\.connector-favorite-available/);
   assert.match(css, /\.popup-connector\.is-favorite-available/);
   assert.match(readme, /Individual connectors can be favorited/);
+  assert.match(js, /function migrateSupersededFavoriteIds/);
+  assert.match(js, /favorite\.stationId !== oldStationId/);
+  assert.match(js, /migrateSupersededFavoriteIds\(nextStations\)/);
 });
 
 test("the last successful postcode is restored", () => {

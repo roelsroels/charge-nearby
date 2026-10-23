@@ -288,6 +288,79 @@ test("previously seen stations remain visible without current EnBW data", async 
   });
 });
 
+test("replacement station IDs supersede matching history without hiding distinct missing stations", async (t) => {
+  const historyDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "charge-nearby-replacement-history-"));
+  const historyFile = path.join(historyDirectory, "stations.json");
+  t.after(() => fs.rmSync(historyDirectory, { recursive: true, force: true }));
+  const query = "/api/chargers?lat=52.37312&lon=4.89319&radius=500";
+  const distinctStation = {
+    ...stationPayload[0],
+    stationId: 222222,
+    shortAddress: "Distinct missing station, 1012 JS Amsterdam, NL",
+    lat: 52.3735,
+  };
+
+  await withServer({
+    apiKey: "test-key",
+    historyFile,
+    fetchImpl: async () => new Response(JSON.stringify([...stationPayload, distinctStation]), { status: 200 }),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}${query}`);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).stations.length, 2);
+  });
+
+  const replacement = { ...stationPayload[0], stationId: 654321 };
+  await withServer({
+    apiKey: "test-key",
+    historyFile,
+    fetchImpl: async () => new Response(JSON.stringify([replacement]), { status: 200 }),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}${query}`);
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.stations.length, 2);
+    const current = payload.stations.find((station) => station.id === "enbw-654321");
+    assert.equal(current.current, true);
+    assert.deepEqual(current.supersededIds, ["enbw-123456"]);
+    assert.equal(payload.stations.some((station) => station.id === "enbw-123456"), false);
+    const missing = payload.stations.find((station) => station.id === "enbw-222222");
+    assert.equal(missing.current, false);
+  });
+
+  const stored = JSON.parse(fs.readFileSync(historyFile, "utf8"));
+  assert.equal(stored.some((station) => station.id === "enbw-123456"), false);
+  assert.deepEqual(stored.find((station) => station.id === "enbw-654321").supersededIds, ["enbw-123456"]);
+});
+
+test("ambiguous matching stations do not supersede history", async (t) => {
+  const historyDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "charge-nearby-ambiguous-history-"));
+  const historyFile = path.join(historyDirectory, "stations.json");
+  t.after(() => fs.rmSync(historyDirectory, { recursive: true, force: true }));
+  const query = "/api/chargers?lat=52.37312&lon=4.89319&radius=500";
+
+  await withServer({
+    apiKey: "test-key",
+    historyFile,
+    fetchImpl: async () => new Response(JSON.stringify(stationPayload), { status: 200 }),
+  }, async (baseUrl) => {
+    assert.equal((await fetch(`${baseUrl}${query}`)).status, 200);
+  });
+
+  const matchingStations = [654321, 654322].map((stationId) => ({ ...stationPayload[0], stationId }));
+  await withServer({
+    apiKey: "test-key",
+    historyFile,
+    fetchImpl: async () => new Response(JSON.stringify(matchingStations), { status: 200 }),
+  }, async (baseUrl) => {
+    const payload = await (await fetch(`${baseUrl}${query}`)).json();
+    assert.equal(payload.stations.length, 3);
+    assert.equal(payload.stations.find((station) => station.id === "enbw-123456").current, false);
+    assert.deepEqual(payload.stations.find((station) => station.id === "enbw-654321").supersededIds, []);
+    assert.deepEqual(payload.stations.find((station) => station.id === "enbw-654322").supersededIds, []);
+  });
+});
+
 test("server continues to serve the frontend", async () => {
   await withServer({ apiKey: "test-key" }, async (baseUrl) => {
     const response = await fetch(baseUrl);
