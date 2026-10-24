@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-24
+
 ### Added
 
 - Add a complete Dutch interface alongside English, including search feedback,
@@ -224,7 +226,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Add Docker Compose, direct Node.js and nginx reverse-proxy deployment options.
 - Add automated API, server, frontend and favorites checks.
 
-[Unreleased]: https://github.com/roelsroels/charge-nearby/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/roelsroels/charge-nearby/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/roelsroels/charge-nearby/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/roelsroels/charge-nearby/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/roelsroels/charge-nearby/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/roelsroels/charge-nearby/compare/v1.1.3...v1.2.0

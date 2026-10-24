@@ -20,13 +20,13 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.3\.1-nl/);
-  assert.match(html, /styles\.css\?v=1\.3\.1-nl/);
+  assert.match(html, /app\.js\?v=1\.4\.0/);
+  assert.match(html, /styles\.css\?v=1\.4\.0/);
   assert.match(html, /data-i18n="heroTitle">Available charger,/);
   assert.match(html, /data-i18n="heroAccent">closeby<\/em>/);
   assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*><span data-i18n="release">Release<\/span> v1\.3\.1<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*><span data-i18n="release">Release<\/span> v1\.4\.0<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /id="connector-filter"/);
@@ -80,12 +80,12 @@ test("changelog documents every release and current unreleased work", () => {
   assert.match(changelog, /^## \[Unreleased\]/m);
   for (const version of [
     "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5", "1.0.6", "1.0.7",
-    "1.1.0", "1.1.1", "1.1.2", "1.1.3", "1.2.0", "1.3.0", "1.3.1",
+    "1.1.0", "1.1.1", "1.1.2", "1.1.3", "1.2.0", "1.3.0", "1.3.1", "1.4.0",
   ]) {
     assert.match(changelog, new RegExp(`^## \\[${version.replaceAll(".", "\\.")}\\] - \\d{4}-\\d{2}-\\d{2}$`, "m"));
   }
   assert.match(changelog, /Reconcile replaced EnBW station IDs/);
-  assert.match(changelog, /\[Unreleased\]: https:\/\/github\.com\/roelsroels\/charge-nearby\/compare\/v1\.3\.1\.\.\.HEAD/);
+  assert.match(changelog, /\[Unreleased\]: https:\/\/github\.com\/roelsroels\/charge-nearby\/compare\/v1\.4\.0\.\.\.HEAD/);
 });
 
 test("postcode and private EnBW API paths stay present", () => {
