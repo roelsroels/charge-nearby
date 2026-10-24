@@ -7,6 +7,13 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+
+- Add a complete Dutch interface alongside English, including search feedback,
+  station states, map popups, connector details and the longest-connected view.
+- Add an accessible `EN` / `NL` selector in the top-right header and remember the
+  selected language in browser-local storage.
+
 ### Fixed
 
 - Reconcile replaced EnBW station IDs with their matching physical charging

@@ -20,20 +20,21 @@ test("page exposes the charging search", () => {
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);
-  assert.match(html, /app\.js\?v=1\.3\.1/);
-  assert.match(html, /styles\.css\?v=1\.3\.1/);
-  assert.match(html, /Available charger, <em>closeby<\/em>/);
+  assert.match(html, /app\.js\?v=1\.3\.1-nl/);
+  assert.match(html, /styles\.css\?v=1\.3\.1-nl/);
+  assert.match(html, /data-i18n="heroTitle">Available charger,/);
+  assert.match(html, /data-i18n="heroAccent">closeby<\/em>/);
   assert.match(html, /Public charging across the Netherlands/);
   assert.doesNotMatch(html, /A free charger/);
-  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*>Release v1\.3\.1<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/roelsroels\/charge-nearby"[^>]*><span data-i18n="release">Release<\/span> v1\.3\.1<\/a>/);
   assert.doesNotMatch(html, /Unofficial private tool/);
   assert.match(html, /id="station-list"/);
   assert.match(html, /id="connector-filter"/);
-  assert.match(html, /value="dc">DC fast charging/);
+  assert.match(html, /value="dc" data-i18n="dcFastCharging">DC fast charging/);
   assert.match(html, /value="ccs">CCS/);
   assert.match(html, /value="chademo">CHAdeMO/);
   assert.match(html, /id="speed-filter"/);
-  assert.match(html, /value="150">150 kW or faster/);
+  assert.match(html, /value="150" data-i18n="speedAtLeast" data-i18n-value="150">150 kW or faster/);
   assert.match(html, /class="charger-profile-key"/);
   assert.match(html, /class="profile-hpc">HPC/);
   assert.match(html, /class="reload-button"[^>]*aria-label="Reload page"/);
@@ -58,6 +59,20 @@ test("page exposes the charging search", () => {
   assert.match(readme, /available favorite connector highlighted on the map/);
   assert.match(readme, /ranks occupied connectors in the selected search/);
   assert.match(readme, /represents approximate plug-in time/);
+});
+
+test("English and Dutch interfaces can be selected and remembered", () => {
+  assert.match(html, /class="language-switch"/);
+  assert.match(html, /data-language="en" aria-pressed="true"/);
+  assert.match(html, /data-language="nl" aria-pressed="false"/);
+  assert.match(html, /data-i18n="searchTitle">Where should we look\?/);
+  assert.match(js, /charge-nearby:language:v1/);
+  assert.match(js, /function translateDocument\(\)/);
+  assert.match(js, /function setLanguage\(language\)/);
+  assert.match(js, /heroTitle: "Beschikbare laadpaal,"/);
+  assert.match(js, /searchTitle: "Waar zullen we zoeken\?"/);
+  assert.match(js, /localStorage\.setItem\(LANGUAGE_STORAGE_KEY, language\)/);
+  assert.match(css, /\.language-switch button\[aria-pressed="true"\]/);
 });
 
 test("changelog documents every release and current unreleased work", () => {
@@ -140,7 +155,8 @@ test("data freshness keeps updating in idle sessions", () => {
 test("occupied connector age is presented as an approximate connected duration", () => {
   assert.match(js, /function connectorAgeText/);
   assert.match(js, /"OCCUPIED", "CHARGING", "SUSPENDED_EV", "SUSPENDED_EVSE"/);
-  assert.match(js, /connected ~\$\{age/);
+  assert.match(js, /connectedApprox: "connected ~\{age\}"/);
+  assert.match(js, /connectedApprox: "~\{age\} aangesloten"/);
   assert.match(readme, /approximate time since EnBW recorded that occupied state/);
 });
 

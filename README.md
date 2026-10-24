@@ -28,6 +28,10 @@ The live deployment's security headers and the runtime container's fixable high/
 
 The last successful postcode and favorites are stored unencrypted in that browser's local storage so they survive a return visit. They can be removed using the browser's site-data controls.
 
+The complete interface is available in English and Dutch. Use the `EN` / `NL`
+selector in the top-right corner; the selected language is remembered in that
+browser's local storage.
+
 ## Screenshots
 
 ![Charge Nearby overview for postcode 1012 JS with an available favorite connector highlighted on the map](docs/screenshots/charge-nearby-1012-js-overview.jpg)
@@ -185,6 +189,7 @@ example, then validate and reload nginx again.
 - Map popups and charger cards show operator, distance, plug type and maximum power. Individual connector status, power, cable and update time can be loaded on demand from either view with `Show connector details`. For an occupied connector, the interface shows the approximate time since EnBW recorded that occupied state as `connected ~…`; this indicates how long the car appears to have been plugged in, not whether power is flowing. Tariff data is deliberately excluded.
 - `Longest connected` scans connector details on request and ranks occupied connectors within the currently selected search circle by approximate connected duration. It shows up to 20 connectors. To bound upstream work, circles containing more than 40 current stations must be narrowed before they can be scanned.
 - The last successfully searched postcode is stored in the current browser and restored on the next visit.
+- The English/Dutch interface preference is stored in the current browser and restored on the next visit. Static labels, search feedback, station states, map popups, connector details and the longest-connected overview all follow the selected language.
 - Data-age labels continue updating while the page is open and refresh immediately when an idle tab becomes active again.
 - Stations seen during the previous 30 days remain visible in gray as `No current data` when a successful EnBW response temporarily omits them. When EnBW replaces only a station ID while its physical location, operator and charging profile remain identical, the old history entry is reconciled with the new ID instead of becoming a gray duplicate; saved station and connector favorites migrate to that replacement. The Docker image stores this last-seen catalogue in its `/data` volume without requiring extra Compose configuration.
 - Dense searches can require many EnBW requests because the upstream API returns grouped markers. The service expands those groups with a concurrency and request limit.

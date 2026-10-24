@@ -17,14 +17,14 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://tile.openstreetmap.org">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.9.4">
-  <link rel="stylesheet" href="styles.css?v=1.3.1">
+  <link rel="stylesheet" href="styles.css?v=1.3.1-nl">
   <script src="vendor/leaflet/leaflet.js?v=1.9.4" defer></script>
-  <script src="app.js?v=1.3.1" defer></script>
+  <script src="app.js?v=1.3.1-nl" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#results">Skip to results</a>
+  <a class="skip-link" href="#results" data-i18n="skipResults">Skip to results</a>
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="Charge Nearby home">
+    <a class="brand" href="#top" aria-label="Charge Nearby home" data-i18n-aria-label="brandHome">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M7 2v4M11 2v4M5 6h8v3a4 4 0 0 1-4 4v0a4 4 0 0 1-4-4V6Z"/>
@@ -34,49 +34,52 @@
       <span>Charge Nearby</span>
     </a>
     <div class="header-meta">
-      <span class="live-pill"><i aria-hidden="true"></i> Connecting to EnBW…</span>
-      <button class="reload-button" type="button" aria-label="Reload page" title="Reload page">
+      <span class="live-pill"><i aria-hidden="true"></i> <span data-i18n="connectingEnbw">Connecting to EnBW…</span></span>
+      <button class="reload-button" type="button" aria-label="Reload page" title="Reload page" data-i18n-aria-label="reloadPage" data-i18n-title="reloadPage">
         <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/>
         </svg>
       </button>
-      <span class="language-button" aria-label="Interface language: English">EN</span>
+      <div class="language-switch" role="group" aria-label="Interface language" data-i18n-aria-label="languageSelector">
+        <button type="button" data-language="en" aria-pressed="true" lang="en">EN</button>
+        <button type="button" data-language="nl" aria-pressed="false" lang="nl">NL</button>
+      </div>
     </div>
   </header>
 
   <main id="top">
     <section class="intro" aria-labelledby="page-title">
       <div>
-        <h1 id="page-title">Available charger, <em>closeby</em></h1>
+        <h1 id="page-title"><span data-i18n="heroTitle">Available charger,</span> <em data-i18n="heroAccent">closeby</em></h1>
       </div>
-      <p class="intro-copy">Enter a NL postcode and see which public charging points are available right now—sorted by distance.</p>
+      <p class="intro-copy" data-i18n="introCopy">Enter a NL postcode and see which public charging points are available right now—sorted by distance.</p>
     </section>
 
-    <section class="finder" aria-label="Charging station finder">
+    <section class="finder" aria-label="Charging station finder" data-i18n-aria-label="finderLabel">
       <form class="search-panel" id="charger-search">
         <div class="search-heading">
           <span class="step-number">01</span>
           <div>
-            <h2>Where should we look?</h2>
-            <p>Use a full postcode for a more precise centre point.</p>
+            <h2 data-i18n="searchTitle">Where should we look?</h2>
+            <p data-i18n="searchDescription">Use a full postcode for a more precise centre point.</p>
           </div>
         </div>
 
-        <label class="field-label" for="postcode">Postcode</label>
+        <label class="field-label" for="postcode" data-i18n="postcode">Postcode</label>
         <div class="postcode-row">
           <div class="postcode-input-wrap">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
             <input id="postcode" name="postcode" autocomplete="postal-code" inputmode="text" maxlength="7" value="1012 JS" aria-describedby="postcode-help">
           </div>
           <button class="search-button" type="submit">
-            <span class="button-label">Find chargers</span>
+            <span class="button-label" data-i18n="findChargers">Find chargers</span>
             <svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </div>
-        <p class="input-help" id="postcode-help" aria-live="polite">Loading public postcode and charging data…</p>
+        <p class="input-help" id="postcode-help" aria-live="polite" data-i18n="loadingInitial">Loading public postcode and charging data…</p>
 
         <fieldset class="radius-fieldset">
-          <legend>Search radius</legend>
+          <legend data-i18n="searchRadius">Search radius</legend>
           <div class="radius-options">
             <label><input type="radio" name="radius" value="250" checked><span>250 m</span></label>
             <label><input type="radio" name="radius" value="500"><span>500 m</span></label>
@@ -85,39 +88,39 @@
           </div>
         </fieldset>
 
-        <div class="charger-filters" role="group" aria-label="Charger filters">
+        <div class="charger-filters" role="group" aria-label="Charger filters" data-i18n-aria-label="chargerFilters">
           <label for="connector-filter">
-            <span>Connector</span>
+            <span data-i18n="connector">Connector</span>
             <select id="connector-filter" name="connector-filter">
-              <option value="all">All connectors</option>
-              <option value="ac">AC charging</option>
-              <option value="dc">DC fast charging</option>
+              <option value="all" data-i18n="allConnectors">All connectors</option>
+              <option value="ac" data-i18n="acCharging">AC charging</option>
+              <option value="dc" data-i18n="dcFastCharging">DC fast charging</option>
               <option value="type2">Type 2</option>
               <option value="ccs">CCS</option>
               <option value="chademo">CHAdeMO</option>
             </select>
           </label>
           <label for="speed-filter">
-            <span>Charging speed</span>
+            <span data-i18n="chargingSpeed">Charging speed</span>
             <select id="speed-filter" name="speed-filter">
-              <option value="0">Any speed</option>
-              <option value="11">11 kW or faster</option>
-              <option value="22">22 kW or faster</option>
-              <option value="50">50 kW or faster</option>
-              <option value="150">150 kW or faster</option>
+              <option value="0" data-i18n="anySpeed">Any speed</option>
+              <option value="11" data-i18n="speedAtLeast" data-i18n-value="11">11 kW or faster</option>
+              <option value="22" data-i18n="speedAtLeast" data-i18n-value="22">22 kW or faster</option>
+              <option value="50" data-i18n="speedAtLeast" data-i18n-value="50">50 kW or faster</option>
+              <option value="150" data-i18n="speedAtLeast" data-i18n-value="150">150 kW or faster</option>
             </select>
           </label>
         </div>
 
-        <div class="status-key" aria-label="Availability legend">
-          <span><i class="available-dot"></i> Available</span>
-          <span><i class="busy-dot"></i> Occupied</span>
-          <span><i class="unknown-dot"></i> Unknown</span>
-          <span><i class="unavailable-dot"></i> No current data</span>
+        <div class="status-key" aria-label="Availability legend" data-i18n-aria-label="availabilityLegend">
+          <span><i class="available-dot"></i> <span data-i18n="available">Available</span></span>
+          <span><i class="busy-dot"></i> <span data-i18n="occupied">Occupied</span></span>
+          <span><i class="unknown-dot"></i> <span data-i18n="unknown">Unknown</span></span>
+          <span><i class="unavailable-dot"></i> <span data-i18n="noCurrentData">No current data</span></span>
         </div>
-        <div class="charger-profile-key" aria-label="Map charger type legend">
-          <span><i class="profile-ac">AC</i> Regular</span>
-          <span><i class="profile-dc">DC</i> Fast</span>
+        <div class="charger-profile-key" aria-label="Map charger type legend" data-i18n-aria-label="chargerTypeLegend">
+          <span><i class="profile-ac">AC</i> <span data-i18n="regular">Regular</span></span>
+          <span><i class="profile-dc">DC</i> <span data-i18n="fast">Fast</span></span>
           <span><i class="profile-hpc">HPC</i> 150+ kW</span>
         </div>
       </form>
@@ -126,17 +129,17 @@
         <div id="map" aria-label="Map showing public charging stations around postcode 1012 JS"></div>
         <div class="map-summary" aria-live="polite">
           <div>
-            <span class="summary-label">Within <strong id="radius-summary">250 m</strong></span>
-            <strong class="summary-number"><span id="available-count">0</span> available</strong>
+            <span class="summary-label"><span data-i18n="within">Within</span> <strong id="radius-summary">250 m</strong></span>
+            <strong class="summary-number"><span id="available-count">0</span> <span data-i18n="availableLower">available</span></strong>
           </div>
           <div class="map-summary-actions">
             <button class="connected-overview-button" type="button">
               <span aria-hidden="true">◷</span>
-              <span>Longest connected</span>
+              <span data-i18n="longestConnected">Longest connected</span>
             </button>
             <button class="map-list-toggle" type="button" aria-pressed="false">
               <span class="map-icon" aria-hidden="true">⌖</span>
-              <span class="toggle-text">Show list</span>
+              <span class="toggle-text" data-i18n="showList">Show list</span>
             </button>
           </div>
         </div>
@@ -146,20 +149,20 @@
     <section class="results-section" id="results" aria-labelledby="results-title">
       <div class="results-header">
         <div>
-          <p class="eyebrow">NEAREST FIRST</p>
-          <h2 id="results-title">Available around <span id="postcode-result">1012 JS</span></h2>
-          <p class="favorites-help">Available favorite connectors appear first, followed by favorite stations. Open connector details to save an individual connector.</p>
+          <p class="eyebrow" data-i18n="nearestFirst">NEAREST FIRST</p>
+          <h2 id="results-title"><span data-i18n="availableAround">Available around</span> <span id="postcode-result">1012 JS</span></h2>
+          <p class="favorites-help" data-i18n="favoritesHelp">Available favorite connectors appear first, followed by favorite stations. Open connector details to save an individual connector.</p>
         </div>
-        <div class="results-total"><strong id="location-count">0</strong><span>locations found</span></div>
+        <div class="results-total"><strong id="location-count">0</strong><span data-i18n="locationsFound">locations found</span></div>
       </div>
       <div class="station-grid" id="station-list"></div>
     </section>
 
     <section class="data-note" aria-labelledby="data-note-title">
-      <p class="eyebrow">ABOUT THE DATA</p>
+      <p class="eyebrow" data-i18n="aboutData">ABOUT THE DATA</p>
       <div>
-        <h2 id="data-note-title">Live enough to be useful.<br>Honest enough to say when it isn’t.</h2>
-        <p>Postcodes are located through the public PDOK address register. Charger locations and connector availability are requested from EnBW mobility+ through this private server and briefly cached. Previously seen locations remain visible in gray when EnBW provides no current data. Availability is the roaming-network status—not a guarantee that a parking bay is accessible.</p>
+        <h2 id="data-note-title" data-i18n-html="dataTitle">Live enough to be useful.<br>Honest enough to say when it isn’t.</h2>
+        <p data-i18n="dataCopy">Postcodes are located through the public PDOK address register. Charger locations and connector availability are requested from EnBW mobility+ through this private server and briefly cached. Previously seen locations remain visible in gray when EnBW provides no current data. Availability is the roaming-network status—not a guarantee that a parking bay is accessible.</p>
       </div>
     </section>
   </main>
@@ -167,18 +170,18 @@
   <dialog class="connected-dialog" id="connected-overview-dialog" aria-labelledby="connected-overview-title">
     <div class="connected-dialog-header">
       <div>
-        <p class="eyebrow">SELECTED SEARCH CIRCLE</p>
-        <h2 id="connected-overview-title">Longest connected</h2>
+        <p class="eyebrow" data-i18n="selectedCircle">SELECTED SEARCH CIRCLE</p>
+        <h2 id="connected-overview-title" data-i18n="longestConnected">Longest connected</h2>
       </div>
-      <button class="connected-dialog-close" type="button" aria-label="Close longest connected overview">×</button>
+      <button class="connected-dialog-close" type="button" aria-label="Close longest connected overview" data-i18n-aria-label="closeLongest">×</button>
     </div>
-    <p class="connected-dialog-note">Ranked by the time since EnBW recorded each connector as occupied. This indicates approximate plug-in time, not whether power is flowing.</p>
+    <p class="connected-dialog-note" data-i18n="connectedNote">Ranked by the time since EnBW recorded each connector as occupied. This indicates approximate plug-in time, not whether power is flowing.</p>
     <div class="connected-overview-content" id="connected-overview-content" aria-live="polite"></div>
   </dialog>
 
   <footer>
-    <div><strong>Charge Nearby</strong><p>Public charging across the Netherlands, searched by postcode.</p></div>
-    <p>Postcodes: PDOK · Chargers: EnBW mobility+ · Map © OpenStreetMap contributors · <a href="https://github.com/roelsroels/charge-nearby" target="_blank" rel="noopener noreferrer">Release v1.3.1</a></p>
+    <div><strong>Charge Nearby</strong><p data-i18n="footerTagline">Public charging across the Netherlands, searched by postcode.</p></div>
+    <p><span data-i18n="footerSources">Postcodes: PDOK · Chargers: EnBW mobility+ · Map © OpenStreetMap contributors ·</span> <a href="https://github.com/roelsroels/charge-nearby" target="_blank" rel="noopener noreferrer"><span data-i18n="release">Release</span> v1.3.1</a></p>
   </footer>
 </body>
 </html>
