@@ -11,6 +11,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 - Add 5 km and 10 km search-radius options to the website and charging API.
 
+### Changed
+
+- Refresh the pinned Node.js 22 Alpine container image to include current
+  security fixes for musl and zlib.
+
 ## [1.4.0] - 2026-10-24
 
 ### Added
