@@ -8,7 +8,8 @@ import { EnbwApiError, fetchStationDetails, fetchStationsAround, haversineMetres
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultHtmlRoot = path.join(currentDirectory, "html");
 const NETHERLANDS_BOUNDS = Object.freeze({ minLat: 50.70, maxLat: 53.60, minLon: 3.20, maxLon: 7.30 });
-const ALLOWED_RADII = new Set([250, 500, 1000, 2000]);
+const ALLOWED_RADII = new Set([250, 500, 1000, 2000, 5000, 10000]);
+const ALLOWED_RADII_DESCRIPTION = "250, 500, 1000, 2000, 5000 or 10000";
 const DEFAULT_HISTORY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_MAX_CONCURRENT_SEARCHES = 2;
 const DEFAULT_DETAIL_CACHE_TTL_MS = 60000;
@@ -421,7 +422,7 @@ export function createChargeNearbyServer({
         const connector = String(url.searchParams.get("connector") || "all").toLowerCase();
         const minPower = Number(url.searchParams.get("minPower") || 0);
         if (![lat, lon, radius].every(Number.isFinite) || !ALLOWED_RADII.has(radius)) {
-          jsonResponse(response, 400, { error: "Provide valid lat, lon and radius (250, 500, 1000 or 2000)" });
+          jsonResponse(response, 400, { error: `Provide valid lat, lon and radius (${ALLOWED_RADII_DESCRIPTION})` });
           return;
         }
         if (!CONNECTOR_FILTERS.has(connector) || !MIN_POWER_FILTERS.has(minPower)) {
@@ -479,7 +480,7 @@ export function createChargeNearbyServer({
     const lon = Number(url.searchParams.get("lon"));
     const radius = Number(url.searchParams.get("radius"));
     if (![lat, lon, radius].every(Number.isFinite) || !ALLOWED_RADII.has(radius)) {
-      jsonResponse(response, 400, { error: "Provide valid lat, lon and radius (250, 500, 1000 or 2000)" });
+      jsonResponse(response, 400, { error: `Provide valid lat, lon and radius (${ALLOWED_RADII_DESCRIPTION})` });
       return;
     }
     if (!isWithinNetherlands(lat, lon)) {

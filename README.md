@@ -181,7 +181,7 @@ example, then validate and reload nginx again.
 ## Data behavior
 
 - Searches are available throughout the European Netherlands. A geographic boundary prevents the private EnBW proxy from being used for arbitrary worldwide coordinates.
-- Supported radii are 250 m, 500 m, 1 km and 2 km.
+- Supported radii are 250 m, 500 m, 1 km, 2 km, 5 km and 10 km. Large searches can encounter the upstream cluster-resolution safeguard in dense areas; choose a smaller radius if that happens.
 - The map, availability total, charger list and longest-connected overview can be filtered by connector family (`AC`, `DC fast`, `Type 2`, `CCS` or `CHAdeMO`) and minimum charging speed. Map markers retain their availability color and add a separate `AC`, blue `DC`, or purple `HPC` (150+ kW) badge. Speed filtering uses each station's maximum advertised power; connector-detail rows use the individual plug power supplied by EnBW.
 - Results are cached for 60 seconds; a cached result up to 15 minutes old is used if EnBW temporarily fails.
 - Favorite stations are stored only in the current browser, highlighted in both the results and map, and sorted to the top of the list. Favorites can be changed from either a result card or map popup.

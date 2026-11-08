@@ -247,9 +247,15 @@ test("charger endpoint validates radius and Netherlands coverage", async () => {
     const rotterdam = await fetch(`${baseUrl}/api/chargers?lat=51.92&lon=4.48&radius=500`);
     assert.equal(rotterdam.status, 200);
 
+    const fiveKilometres = await fetch(`${baseUrl}/api/chargers?lat=51.92&lon=4.48&radius=5000`);
+    assert.equal(fiveKilometres.status, 200);
+
+    const tenKilometres = await fetch(`${baseUrl}/api/chargers?lat=51.92&lon=4.48&radius=10000`);
+    assert.equal(tenKilometres.status, 200);
+
     const outside = await fetch(`${baseUrl}/api/chargers?lat=48.86&lon=2.35&radius=500`);
     assert.equal(outside.status, 400);
-    assert.equal(upstreamRequests, 1);
+    assert.equal(upstreamRequests, 3);
   });
 });
 

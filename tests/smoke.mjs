@@ -17,6 +17,8 @@ test("page exposes the charging search", () => {
   assert.match(html, /autocomplete="postal-code"/);
   assert.match(html, /name="radius" value="250"/);
   assert.match(html, /name="radius" value="2000"/);
+  assert.match(html, /name="radius" value="5000"/);
+  assert.match(html, /name="radius" value="10000"/);
   assert.match(html, /name="radius" value="250" checked/);
   assert.doesNotMatch(html, /name="radius" value="500" checked/);
   assert.match(html, /id="radius-summary">250 m</);

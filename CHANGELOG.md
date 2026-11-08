@@ -7,6 +7,10 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+
+- Add 5 km and 10 km search-radius options to the website and charging API.
+
 ## [1.4.0] - 2026-10-24
 
 ### Added
